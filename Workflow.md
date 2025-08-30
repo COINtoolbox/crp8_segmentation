@@ -18,6 +18,8 @@ The challenge now is to combine both strategies in an astrophysically coherent w
 
 Below, I will include some possible, though not exhaustive, steps we need to develop. 
 
+### Possible steps:
+
 1. Create our own customized version of something similar to [astrodendro](https://dendrograms.readthedocs.io/en/stable/). 
 The method sounds simple enough to be reproducible, there is nothing wrong with this package, it's just for the sake of a self-consistent pipeline. Here is the first issue, the method works on each filter alone, so there is no consistency across bands. On the other hands, I think it's unfeasible to work directly on the SED space for high-resolution images. So we may need a two-step process, unless someone has a better idea. Here is a opportunity for a quick comparison against  [Segment Anything Models](https://ai.meta.com/sam2/). This first step won't be the final result, but rather a series of cutouts of candidate regions for further scrutinity on the SED/Spectral space. So ideally we want widows around target regions that will not split regions that are spatially connected, but also not target noisy/sky.
 
