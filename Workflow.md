@@ -14,4 +14,14 @@ In general, segmentation models—including those commonly used in astrophysics 
 By contrast, my previous code Capivara was designed to segment IFU datacubes in MaNGA, where the field typically contains only one galaxy. Even in the presence of foreground stars or mergers, I did not need to worry much about multiple independent objects in the same field. My approach was therefore based primarily on grouping pixels by spectral similarity while ignoring spatial information. Yet it performed quite well: after all, each spectrum in a datacube implicitly encodes some degree of spatial information, even if not 
 explicitly.
 
-The challenge now is to combine both strategies in an astrophysically coherent way. While Capivara can be extended to multiband images, its performance is suboptimal when used in isolation.
+The challenge now is to combine both strategies in an astrophysically coherent way. While Capivara can be extended to multiband images, its performance is suboptimal when used in isolation. 
+
+Below, I will include some possible, though not exhaustive, steps we need to develop. 
+
+1. Create our own customized version of something similar to [astrodendro](https://dendrograms.readthedocs.io/en/stable/). 
+The method sounds simple enough to be reproducible, there is nothing wrong with this package, it's just for the sake of a self-consistent pipeline. Here is the first issue, the method works on each filter alone, so there is no consistency across bands. On the other hands, I think it's unfeasible to work directly on the SED space for high-resolution images. So we may need a two-step process, unless someone has a better idea. Here is a opportunity for a quick comparison against  [Segment Anything Models](https://ai.meta.com/sam2/).
+
+
+
+
+
