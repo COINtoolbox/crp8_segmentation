@@ -1,4 +1,4 @@
-# Workflow 
+# Possible Workflow 
 
 ## Spectro-Photometric Segmentation
 
