@@ -6,7 +6,8 @@ I will list below some possible scenarios we tan take to address the segmentatio
 
 
 Survey: [JADES](https://archive.stsci.edu/hlsp/jades)
-Data folder: [Segmentation folder](./data/)
+
+The data prepared by Andressa: [data](./data/)
 
 
 ### Context:
