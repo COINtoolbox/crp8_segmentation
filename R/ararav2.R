@@ -58,10 +58,12 @@ pca_energy_map <- function(df_mat, H, W, d = 5) {
 }
 
 # ---- Build features for density clustering on detection image
-build_features <- function(P, q_fore = 0.90, scale_xy = 1, scale_I = 1) {
+build_features <- function(P, q_fore = 0.85, scale_xy = 1, scale_I = 1) {
   H <- nrow(P); W <- ncol(P)
-  v <- as.numeric(P); v <- v[is.finite(v)]
-  a <- stats::quantile(v, 0.01, na.rm=TRUE); b <- stats::quantile(v, 0.99, na.rm=TRUE)
+  v <- as.numeric(P); 
+  v <- v[is.finite(v)]
+  a <- stats::quantile(v, 0.01, na.rm=TRUE); 
+  b <- stats::quantile(v, 0.99, na.rm=TRUE)
   P01 <- (pmin(pmax(P, a), b) - a) / max(b - a, .Machine$double.eps)
   Fg  <- P01 >= stats::quantile(P01, q_fore, na.rm=TRUE)
   idx <- which(Fg); if (!length(idx)) return(list(idx=integer(0), feat=NULL, P01=P01))
@@ -71,7 +73,7 @@ build_features <- function(P, q_fore = 0.90, scale_xy = 1, scale_I = 1) {
 }
 
 # ----------------- Segmentation methods --------------------
-segment_dbscan_image <- function(P, q_fore=0.90, scale_xy=1.0, scale_I=1.0, eps=0.06, minPts=40) {
+segment_dbscan_image <- function(P, q_fore=0.90, scale_xy=1.0, scale_I=1.0, eps=0.06, minPts=30) {
   H <- nrow(P); W <- ncol(P)
   P01 <- robust01(P); Fg <- P01 >= stats::quantile(P01, q_fore, na.rm=TRUE)
   idx <- which(Fg); if (!length(idx)) return(matrix(0L, H, W))
@@ -322,7 +324,7 @@ mask_cube <- function(cube, labels, mode = c("zero","na","soft"), sigma = 2) {
 
 # ========================= Example ==========================
 # 1) Read cube & build PCA detection image
-Xfits <- FITSio::readFITS("datacube_reg1.fits")
+Xfits <- FITSio::readFITS("datacube_reg3.fits")
 cube  <- Xfits$imDat
 H <- dim(cube)[1]; W <- dim(cube)[2]
 
@@ -337,7 +339,7 @@ P  <- pca_energy_map(df_mat, H, W, d = 2)
 
 # 2) CHILD segmentation (choose one)
 # L_child <- segment_dbscan_image(P, q_fore=0.90, scale_xy=1.0, scale_I=1.0, eps=0.05, minPts=10)
-L_child <- segment_hdbscan(P, q_fore=0.90, scale_xy=1.0, scale_I=2.0, minPts=50)
+L_child <- segment_hdbscan(P, q_fore=0.8, scale_xy=1.0, scale_I=2.0, minPts=30)
 # L_child <- segment_optics_xi(P, q_fore=0.90, scale_xy=1.0, scale_I=1.2, minPts=15, xi=0.05)
 
 # 3) Clean children + fill interiors
@@ -351,10 +353,99 @@ L_parent <- super$L_parent
 # 5) Catalogue + cutouts (per parent)
 catalog  <- catalog_parent(cube, L_parent)
 regions  <- extract_region_cubes(cube, L_parent,
-                                 min_size = 200,
+                                 min_size = 100,
                                  pad = "margin", margin = 8,
                                  return_masked_cube = TRUE)
 
+
+
+
+
+save_regions_as_fits <- function(regions,
+                                 out_dir  = "regions_fits",
+                                 prefix   = "region",
+                                 write_masks = TRUE,
+                                 catalog_csv = "regions_catalog.csv",
+                                 overwrite   = TRUE) {
+  if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
+  
+  .safe_write <- function(expr, path) {
+    if (file.exists(path) && !overwrite) {
+      message("Skipping existing file: ", path)
+      return(invisible(FALSE))
+    }
+    eval(expr)
+    invisible(TRUE)
+  }
+  
+  meta <- list()
+  labs <- names(regions)
+  ord  <- suppressWarnings(order(as.integer(labs)))
+  labs <- labs[if (all(is.finite(ord))) ord else seq_along(labs)]
+  
+  for (lab in labs) {
+    reg <- regions[[lab]]
+    if (is.null(reg) || is.null(reg$cube)) next
+    
+    id   <- if (nzchar(lab)) as.integer(lab) else NA_integer_
+    cube <- reg$cube               # 3D array
+    mask <- reg$mask               # 2D logical
+    bbox <- reg$bbox
+    npix <- reg$npix
+    
+    # --- Replace NAs or out-of-mask with zeros ---
+    if (!is.null(mask)) {
+      for (b in seq_len(dim(cube)[3])) {
+        Xb <- cube[,,b]
+        Xb[!mask | !is.finite(Xb)] <- 0
+        cube[,,b] <- Xb
+      }
+    } else {
+      cube[!is.finite(cube)] <- 0
+    }
+    
+    storage.mode(cube) <- "double"
+    
+    f_cube <- file.path(out_dir, sprintf("%s_%03d.fits", prefix, id))
+    f_mask <- file.path(out_dir, sprintf("%s_%03d_mask.fits", prefix, id))
+    
+    .safe_write(quote(FITSio::writeFITSim(cube, f_cube)), f_cube)
+    
+    if (isTRUE(write_masks) && !is.null(mask)) {
+      mask_im <- matrix(as.integer(mask), nrow(mask), ncol(mask))
+      .safe_write(quote(FITSio::writeFITSim(mask_im, f_mask)), f_mask)
+    }
+    
+    meta[[length(meta) + 1L]] <- data.frame(
+      parent_id = id,
+      file_cube = f_cube,
+      file_mask = if (isTRUE(write_masks) && !is.null(mask)) f_mask else NA_character_,
+      y1 = bbox[1], y2 = bbox[2], x1 = bbox[3], x2 = bbox[4],
+      npix = npix,
+      stringsAsFactors = FALSE
+    )
+  }
+  
+  if (length(meta)) {
+    catdf <- do.call(rbind, meta)
+    utils::write.csv(catdf, file.path(out_dir, catalog_csv), row.names = FALSE)
+    message("Wrote catalog: ", file.path(out_dir, catalog_csv))
+    return(invisible(catdf))
+  } else {
+    warning("No regions found to write.")
+    invisible(NULL)
+  }
+}
+
+
+catdf <- save_regions_as_fits(
+  regions,
+  out_dir = "regions_fits",   # <- inside Region2
+  prefix  = "parent",
+  write_masks = TRUE,
+  catalog_csv = "parent_regions_catalog.csv",
+  overwrite = TRUE
+)
 
 
 
