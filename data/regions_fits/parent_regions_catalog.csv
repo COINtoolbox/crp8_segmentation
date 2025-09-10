@@ -1,6 +1,5 @@
 "parent_id","file_cube","file_mask","y1","y2","x1","x2","npix"
-1,"regions_fits/parent_001.fits","regions_fits/parent_001_mask.fits",1,115,1,118,5511
-2,"regions_fits/parent_002.fits","regions_fits/parent_002_mask.fits",1,300,1,330,36527
-3,"regions_fits/parent_003.fits","regions_fits/parent_003_mask.fits",54,240,27,185,16191
-4,"regions_fits/parent_004.fits","regions_fits/parent_004_mask.fits",109,144,237,275,366
-5,"regions_fits/parent_005.fits","regions_fits/parent_005_mask.fits",217,263,203,248,605
+1,"regions_fits/parent_001.fits","regions_fits/parent_001_mask.fits",57,141,73,130,2059
+2,"regions_fits/parent_002.fits","regions_fits/parent_002_mask.fits",125,248,55,112,2958
+3,"regions_fits/parent_003.fits","regions_fits/parent_003_mask.fits",129,220,119,223,4504
+4,"regions_fits/parent_004.fits","regions_fits/parent_004_mask.fits",291,318,186,242,716
