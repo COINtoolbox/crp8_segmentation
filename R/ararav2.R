@@ -73,7 +73,7 @@ build_features <- function(P, q_fore = 0.85, scale_xy = 1, scale_I = 1) {
 }
 
 # ----------------- Segmentation methods --------------------
-segment_dbscan_image <- function(P, q_fore=0.90, scale_xy=1.0, scale_I=1.0, eps=0.06, minPts=30) {
+segment_dbscan <- function(P, q_fore=0.90, scale_xy=1.0, scale_I=1.0, eps=0.06, minPts=30) {
   H <- nrow(P); W <- ncol(P)
   P01 <- robust01(P); Fg <- P01 >= stats::quantile(P01, q_fore, na.rm=TRUE)
   idx <- which(Fg); if (!length(idx)) return(matrix(0L, H, W))
@@ -338,8 +338,8 @@ df_mat <- if (requireNamespace("capivara", quietly = TRUE)) {
 P  <- pca_energy_map(df_mat, H, W, d = 2)
 
 # 2) CHILD segmentation (choose one)
-# L_child <- segment_dbscan_image(P, q_fore=0.90, scale_xy=1.0, scale_I=1.0, eps=0.05, minPts=10)
-L_child <- segment_hdbscan(P, q_fore=0.8, scale_xy=1.0, scale_I=2.0, minPts=30)
+ L_child <- segment_dbscan(P, q_fore=0.90, scale_xy=1.0, scale_I=1.0, eps=0.05, minPts=10)
+L_child <- segment_hdbscan(P, q_fore=0.85, scale_xy=1.0, scale_I=2.0, minPts=30)
 # L_child <- segment_optics_xi(P, q_fore=0.90, scale_xy=1.0, scale_I=1.2, minPts=15, xi=0.05)
 
 # 3) Clean children + fill interiors
