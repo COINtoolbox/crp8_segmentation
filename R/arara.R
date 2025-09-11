@@ -244,6 +244,13 @@ extract_region_cubes <- function(cube, labels, margin = 6L, min_size = 50L,
   out[seq_len(j)]
 }
 
+
+
+
+
+
+
+
 # ---- Optional: save subcubes to FITS ----
 write_region_cubes_fits <- function(regions, prefix = "cutout") {
   i <- 0L
@@ -253,6 +260,23 @@ write_region_cubes_fits <- function(regions, prefix = "cutout") {
     FITSio::writeFITSim(fn, regions[[nm]]$cube)
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # ============================================================
 # Example (adjust paths & params)
