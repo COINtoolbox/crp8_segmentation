@@ -324,7 +324,7 @@ mask_cube <- function(cube, labels, mode = c("zero","na","soft"), sigma = 2) {
 
 # ========================= Example ==========================
 # 1) Read cube & build PCA detection image
-Xfits <- FITSio::readFITS("datacube_reg3.fits")
+Xfits <- FITSio::readFITS("datacube_reg1.fits")
 cube  <- Xfits$imDat
 H <- dim(cube)[1]; W <- dim(cube)[2]
 
@@ -338,7 +338,7 @@ df_mat <- if (requireNamespace("capivara", quietly = TRUE)) {
 P  <- pca_energy_map(df_mat, H, W, d = 2)
 
 # 2) CHILD segmentation (choose one)
- L_child <- segment_dbscan(P, q_fore=0.90, scale_xy=1.0, scale_I=1.0, eps=0.05, minPts=10)
+# L_child <- segment_dbscan(P, q_fore=0.90, scale_xy=1.0, scale_I=1.0, eps=0.05, minPts=10)
 L_child <- segment_hdbscan(P, q_fore=0.85, scale_xy=1.0, scale_I=2.0, minPts=30)
 # L_child <- segment_optics_xi(P, q_fore=0.90, scale_xy=1.0, scale_I=1.2, minPts=15, xi=0.05)
 
@@ -352,6 +352,10 @@ L_parent <- super$L_parent
 
 # 5) Catalogue + cutouts (per parent)
 catalog  <- catalog_parent(cube, L_parent)
+
+
+cube_2 <- mask_cube(cube,L_parent)
+
 regions  <- extract_region_cubes(cube, L_parent,
                                  min_size = 100,
                                  pad = "margin", margin = 8,
