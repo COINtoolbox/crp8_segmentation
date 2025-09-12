@@ -100,6 +100,7 @@ labels_fix <- Seg_wavelets$imDat |> flipV() |> rot90ccw()
 cub_cut_wav <- mask_cube(cube,labels_fix,mode="na")
 
 
+
 reg_Wavelet <- RegionPhotometry(cube, labels_fix, 
                         error_fallback = "flux_over_sqrt_n")
 

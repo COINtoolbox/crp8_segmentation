@@ -69,36 +69,25 @@ source("utils/pca_energy_map.R")
 source("utils/pca_energy_map.R")
 source("utils/build_features.R")
 source("utils/compact_labels.R")
+source("utils/cube_to_matrix.R")
 source("Segmentantion_functions/segment_hdbscan.R")
 
 Xfits <- FITSio::readFITS("..//data/datacube_reg1_Jy.fits")
 cube  <- Xfits$imDat
 H <- dim(cube)[1]; W <- dim(cube)[2]
 
-df_mat <- if (requireNamespace("capivara", quietly = TRUE)) {
-  capivara::cube_to_matrix(Xfits)
-} else {
-  B <- dim(cube)[3]; M <- matrix(NA_real_, H*W, B)
-  for (b in seq_len(B)) M[,b] <- as.vector(cube[,,b]); M
-}
-
+df_mat <- cube_to_matrix(Xfits)
 P  <- pca_energy_map(df_mat, H, W, d = 2)
-
-
 # Child segmentation → clean → fill
 L_child <- segment_hdbscan(P, q_fore = 0.9, scale_xy = 1.0, 
                            scale_I = 2.0, minPts = 30)
-
 L_child2  <- L_child |> filter_by_size(min_size = 25) |> fill_holes_per_label()
 image(L_child2,col=viridis(100))
-
 cub_cut <- mask_cube(cube,L_child2,mode="na")
 image(cub_cut[,,1],col=viridis(100))
-
 cube_cap <- list(imDat = cub_cute)   # cube_2 is your [nx,ny,nb] array
-seg <- capivara::segment(cube_cap,N=100)
-image(seg$cluster_map,col=plasma(500))
-
+seg <- capivara::segment(cube_cap,N=30)
+image(seg$cluster_map,col=viridis(30))
 reg <- RegionPhotometry(cube, seg$cluster_map, 
                         error_fallback = "flux_over_sqrt_n")
 
