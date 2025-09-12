@@ -99,22 +99,21 @@ filters <- c("F090W","F115W","F150W","F182M","F200W",
              "F430M","F444W","F480M")
 map_num2filt <- setNames(filters, as.character(seq_along(filters)))
 
-# ---- rename bands in LONG table ----
+# LONG: rename numeric bands -> JWST filters
 reg$flux_long <- reg$flux_long %>%
   dplyr::mutate(band = {
-    b   <- trimws(band)
+    b   <- trimws(as.character(band))
     idx <- suppressWarnings(as.integer(b))
-    # map only pure numerics 1..length(filters), keep others as-is
     keep <- !is.na(idx) & idx >= 1 & idx <= length(filters)
     out  <- b
     out[keep] <- map_num2filt[as.character(idx[keep])]
     out
   })
 
-# ---- rename columns in WIDE table ----
+# WIDE: rename columns "1", "1_err", "1_n_eff" -> "F090W", "F090W_err", ...
 rename_wide_by_filters <- function(df, filters) {
   old <- colnames(df)
-  m   <- regexpr("(_n_eff|_err)$", old)            # grab suffix if present
+  m   <- regexpr("(_n_eff|_err)$", old)
   suf  <- ifelse(m > 0, regmatches(old, m), "")
   base <- trimws(ifelse(m > 0, substring(old, 1, m - 1), old))
   
@@ -124,18 +123,29 @@ rename_wide_by_filters <- function(df, filters) {
   newbase[is_band] <- filters[idx[is_band]]
   
   new <- paste0(newbase, suf)
-  # in the unlikely case of collisions, disambiguate:
   if (any(duplicated(new))) new <- make.unique(new, sep = "_")
   colnames(df) <- new
   df
 }
 reg$flux_wide <- rename_wide_by_filters(reg$flux_wide, filters)
 
-# ---- readable order: per band -> (flux, err, n_eff) ----
+# Recompute errors as |flux|/sqrt(n_pix) and DROP *_n_eff columns
+recompute_err_drop_neff <- function(df, filters) {
+  stopifnot("n_pix" %in% names(df))
+  for (f in filters) {
+    if (f %in% names(df)) {
+      df[[paste0(f, "_err")]] <- abs(df[[f]]) / sqrt(pmax(df$n_pix, 1))
+    }
+  }
+  df[, !grepl("_n_eff$", names(df)), drop = FALSE]
+}
+reg$flux_wide <- recompute_err_drop_neff(reg$flux_wide, filters)
+
+# Order nicely: per band (flux, err) only
 reorder_by_band <- function(df, filters) {
-  parts <- unlist(lapply(filters, function(f) c(f, paste0(f,"_err"), paste0(f,"_n_eff"))))
-  keep  <- c("region","n_pix", parts[parts %in% colnames(df)])
-  df[, keep, drop = FALSE]
+  parts <- unlist(lapply(filters, function(f) c(f, paste0(f, "_err"))))
+  keep  <- c("region", "n_pix", parts)
+  dplyr::select(df, dplyr::any_of(keep))
 }
 flux_wide_out <- reorder_by_band(reg$flux_wide, filters)
 
