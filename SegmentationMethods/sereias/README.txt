@@ -10,7 +10,7 @@ A bit more details:
 
 SEREIAS is an acronym for "Spectral Energy-aware Region Extraction via Interscale Aggregation with Starlets". The method is an SED-aware spatial segmentation strategy for hyperspectral data cubes (x, y, λ). 
 
-It decomposes each cube with a 2D starlet transform acrss wavelengths, segments each scale via saliency-driven, neighborhood-constrained region growing that enforces spectral coherence, then fuses all scales into a single, unique global label map using interscale evidence (saliency or scale detection priority rules). A final (optional) adjacency-based refinement compares region SEDs in the original cube to merge spectrally indistinguishable neighbors while preserving genuinely distinct structures. 
+It decomposes each cube with a 2D starlet transform acrss wavelengths, segments each scale via saliency-driven, neighborhood-constrained region growing that enforces spectral coherence using a simple cosine similarity between spectra, then fuses all scales into a single, unique global label map using interscale evidence (saliency or scale detection priority rules). A final (optional) adjacency-based refinement compares region SEDs in the original cube to merge spectrally indistinguishable neighbors while preserving genuinely distinct structures. 
 
 SEREIA can output per-scale maps, a fused segmentation, and optional diagnostics (mosaics, wavelet power metrics), and is highly configurable (e.g., seed quantiles, cosine-similarity thresholds, 4 or 8 pixel spatial connectivity, minimum detectable region size). Designed for astronomy and remote sensing alike, SEREIA emphasizes spectral fidelity and spatial contiguity to produce clean, interpretable object maps from complex multi-scale data.
 
