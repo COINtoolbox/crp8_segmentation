@@ -5,6 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "crp8_sereias"
 version = "0.1.0"
+requires-python = ">=3.10"
 description = "Segmentation methods: Sereias module"
 readme = "README.md"
 license = { text = "GPL-3.0" }

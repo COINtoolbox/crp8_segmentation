@@ -4,6 +4,7 @@ setup(
     name="crp8_sereias",
     version="0.1.0",
     description="Segmentation methods: Sereias module",
+    python_requires=">=3.10",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     author="The Cosmostatistics Initiative",
