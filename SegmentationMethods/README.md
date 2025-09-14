@@ -1,4 +1,5 @@
-SEREIAS: Spectral Energy-aware Region Extraction via Interscale Aggregation with Starlets.
+## SEREIAS: Spectral Energy-aware Region Extraction via Interscale Aggregation with Starlets.
+
 
 COIN CRP2025. Alberto, Celine, Rafael, Aarya, Shravya, Reinaldo, Ana, Andressa, Thallis, Lilianne, Rupesh, Emille, Kristen, Darc [for this specific package only!].
 
@@ -6,7 +7,17 @@ COIN CRP2025. Alberto, Celine, Rafael, Aarya, Shravya, Reinaldo, Ana, Andressa, 
 TLDR: SEREIAS is a spatial segmentation tool that is based on a SED-aware analysis that segments hyperspectral cubes at multiple starlet wavelet scales, then fuses and refines the thresholded regions using interscale connection evidence and adjacency-based spectral similarity.
 
 
-A bit more details: 
+## Installation
+
+To install the package, first clone the repository and navigate to the `SegmentationMethods` directory:
+
+```bash
+git clone https://github.com/COINtoolbox/crp8_segmentation.git
+cd crp8_segmentation/SegmentationMethods
+pip install .
+```
+
+## A bit more details
 
 SEREIAS is an acronym for "Spectral Energy-aware Region Extraction via Interscale Aggregation with Starlets". The method is an SED-aware spatial segmentation strategy for hyperspectral data cubes (x, y, λ). 
 
