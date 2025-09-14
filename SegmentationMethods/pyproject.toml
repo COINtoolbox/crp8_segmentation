@@ -7,7 +7,7 @@ name = "crp8_sereias"
 version = "0.1.0"
 description = "Segmentation methods: Sereias module"
 readme = "README.md"
-license = { text = "MIT" }
+license = { text = "GPL-3.0" }
 authors = [
   { name = "CRP8", email = "contact@cosmostatistics-initiative.org" }
 ]
