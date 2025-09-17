@@ -70,24 +70,85 @@ source("utils/pca_energy_map.R")
 source("utils/build_features.R")
 source("utils/compact_labels.R")
 source("utils/cube_to_matrix.R")
+source("utils/le_energy_map.R")
 source("Segmentantion_functions/segment_hdbscan.R")
 
-Xfits <- FITSio::readFITS("..//data/datacube_reg1_Jy.fits")
+Xfits <- FITSio::readFITS("..//data/raw/datacube_reg5.fits")
 cube  <- Xfits$imDat
 H <- dim(cube)[1]; W <- dim(cube)[2]
 
 df_mat <- cube_to_matrix(Xfits)
-P  <- pca_energy_map(df_mat, H, W, d = 2)
+#P  <- pca_energy_map(df_mat, H, W, d = 10)
+P <- umap_energy_map(df_mat, H, W, d = 5, n_neighbors = 20, min_dist = 0.1,
+                     xy_weight = 0.25, energy = "mahalanobis")
+
+
+
+
+# Suppose P is HxW numeric matrix (from PCA/UMAP/LE/NMF/RPCA etc.)
+rP <- matrix_to_rast(P)  # set xres/yres/crs if you know them
+
+# Mask: use your polygon(s); if none, use full extent
+mask_sf <- raster_extent_polygon(rP)
+
+# Pick PSF FWHM in pixels; threshold & min separation:
+cent <- find_flux_centroids(
+  r = rP,
+  mask_sf = mask_sf,
+  fwhm_px = 2,        # ← set to your PSF (px)
+  thr_q   = 0.875,     # top 10% of smoothed flux inside mask
+  min_sep = 4,        # ~ PSF in px
+  refine_radius = 2   # optional subpixel COM refinement
+)
+
+# Inspect numeric coordinates
+sf::st_coordinates(cent)
+
+sf_pixels <- sf::st_as_sf(terra::as.points(rP))   # points with value column
+ggplot() +
+  geom_sf(data = sf_pixels, aes(color = lyr.1), size = 0.4, 
+          alpha = 0.9, show.legend = FALSE) +
+  geom_sf(data = mask_sf, fill = NA, color = "white", linewidth = 0.6) +
+  geom_sf(data = cent, color = "red", shape = 1, size = 4, stroke = 1) +
+  coord_sf(expand = FALSE) +
+  scale_color_viridis_c(option = "C", na.value = "white") +
+  theme_minimal(base_size = 12) +
+  theme(panel.grid = element_blank())
+
+
+M <- cub_cut[,,4]
+H <- nrow(M); 
+W <- ncol(M)
+pts <- as.data.frame(sf::st_coordinates(cent))  # columns X, Y
+
+# Image with pixel-index axes (and the usual orientation fix for image()):
+image(x = 1:W, y = 1:H, z = t(M)[, H:1],
+      col = viridis::viridis(100), useRaster = TRUE, asp = 1,
+      xlab = "x (pixels)", ylab = "y (pixels)",
+      zlim = range(M, na.rm = TRUE))  # ignore NAs for color scale
+
+# Overlay the points (no swaps, no flips)
+points(pts$X, pts$Y, pch = 1, col = "red", cex = 2, lwd = 1.2)
+
+
+
+
 # Child segmentation → clean → fill
-L_child <- segment_hdbscan(P, q_fore = 0.9, scale_xy = 1.0, 
-                           scale_I = 2.0, minPts = 30)
-L_child2  <- L_child |> filter_by_size(min_size = 25) |> fill_holes_per_label()
-image(L_child2,col=viridis(100))
+L_child <- segment_hdbscan(P, q_fore = 0.85, scale_xy = 1.0, 
+                           scale_I = 2, minPts = 20)
+L_child2  <- L_child |> filter_by_size(min_size = 30) |> fill_holes_per_label()
+image(L_child,col=viridis(100))
+
 cub_cut <- mask_cube(cube,L_child2,mode="na")
-image(cub_cut[,,1],col=viridis(100))
-cube_cap <- list(imDat = cub_cute)   # cube_2 is your [nx,ny,nb] array
-seg <- capivara::segment(cube_cap,N=30)
-image(seg$cluster_map,col=viridis(30))
+
+image(cub_cut[,,4],col=viridis(100))
+
+
+cube_cap <- list(imDat = cub_cut)   # cube_2 is your [nx,ny,nb] array
+seg <- capivara::segment(cube_cap,N=100)
+image(seg$cluster_map,col=plasma(200))
+
+
 reg <- RegionPhotometry(cube, seg$cluster_map, 
                         error_fallback = "flux_over_sqrt_n")
 

@@ -104,7 +104,63 @@ cub_cut_wav <- mask_cube(cube,labels_fix,mode="na")
 reg_Wavelet <- RegionPhotometry(cube, labels_fix, 
                         error_fallback = "flux_over_sqrt_n")
 
+
+filters <- c("F090W","F115W","F150W","F182M","F200W",
+             "F210M","F277W","F335M","F356W","F410M",
+             "F430M","F444W","F480M")
+map_num2filt <- setNames(filters, as.character(seq_along(filters)))
+
+# LONG: rename numeric bands -> JWST filters
+reg_Wavelet$flux_long <- reg_Wavelet$flux_long %>%
+  dplyr::mutate(band = {
+    b   <- trimws(as.character(band))
+    idx <- suppressWarnings(as.integer(b))
+    keep <- !is.na(idx) & idx >= 1 & idx <= length(filters)
+    out  <- b
+    out[keep] <- map_num2filt[as.character(idx[keep])]
+    out
+  })
+
+# WIDE: rename columns "1", "1_err", "1_n_eff" -> "F090W", "F090W_err", ...
+rename_wide_by_filters <- function(df, filters) {
+  old <- colnames(df)
+  m   <- regexpr("(_n_eff|_err)$", old)
+  suf  <- ifelse(m > 0, regmatches(old, m), "")
+  base <- trimws(ifelse(m > 0, substring(old, 1, m - 1), old))
+  
+  idx     <- suppressWarnings(as.integer(base))
+  is_band <- !is.na(idx) & idx >= 1 & idx <= length(filters)
+  newbase <- base
+  newbase[is_band] <- filters[idx[is_band]]
+  
+  new <- paste0(newbase, suf)
+  if (any(duplicated(new))) new <- make.unique(new, sep = "_")
+  colnames(df) <- new
+  df
+}
+reg_Wavelet$flux_wide <- rename_wide_by_filters(reg_Wavelet$flux_wide, filters)
+
+# Recompute errors as |flux|/sqrt(n_pix) and DROP *_n_eff columns
+recompute_err_drop_neff <- function(df, filters) {
+  stopifnot("n_pix" %in% names(df))
+  for (f in filters) {
+    if (f %in% names(df)) {
+      df[[paste0(f, "_err")]] <- abs(df[[f]]) / sqrt(pmax(df$n_pix, 1))
+    }
+  }
+  df[, !grepl("_n_eff$", names(df)), drop = FALSE]
+}
+reg_Wavelet$flux_wide <- recompute_err_drop_neff(reg_Wavelet$flux_wide, filters)
+
+# Order nicely: per band (flux, err) only
+reorder_by_band <- function(df, filters) {
+  parts <- unlist(lapply(filters, function(f) c(f, paste0(f, "_err"))))
+  keep  <- c("region", "n_pix", parts)
+  dplyr::select(df, dplyr::any_of(keep))
+}
 flux_wide_out_wavelets <- reorder_by_band(reg_Wavelet$flux_wide, filters)
+
+
 
 readr::write_csv(flux_wide_out_wavelets,
                  "/Users/rd23aag/Documents/GitHub/crp8_segmentation/outdir/flux_wide_wavelets_reg1.csv")
