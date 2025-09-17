@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "crp8_sereias"
+version = "0.1.0"
+requires-python = ">=3.10"
+description = "Segmentation methods: Sereias module"
+readme = "README.md"
+license = { text = "GPL-3.0" }
+authors = [
+  { name = "CRP8", email = "contact@cosmostatistics-initiative.org" }
+]
+dependencies = [
+  "numpy",
+  "matplotlib",
+  "astropy"
+]
+
+[project.urls]
+Home = "https://github.com/COINtoolbox/crp8_segmentation"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
