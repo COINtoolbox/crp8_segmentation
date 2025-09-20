@@ -1,3 +1,36 @@
+# ---------- Helpers ----------
+safe_q <- function(x, p){
+  x <- x[is.finite(x)]
+  if (!length(x)) return(0)
+  as.numeric(quantile(x, p, na.rm = TRUE))
+}
+clp <- function(z) pmax(pmin(z, 1), 0)
+
+stretch_builder <- function(qlo, qhi, Q = 6, eps = 1e-12){
+  rng <- max(qhi - qlo, eps)
+  function(x){
+    v <- (pmin(pmax(x, qlo), qhi) - qlo) / rng
+    asinh(Q * v) / asinh(Q)
+  }
+}
+
+gray_world <- function(R,G,B, mask, eps = 1e-12){
+  m <- function(z) mean(z[mask], na.rm = TRUE)
+  sR <- m(R) + eps; sG <- m(G) + eps; sB <- m(B) + eps
+  s  <- (sR + sG + sB) / 3
+  list(R = R * (s/sR), G = G * (s/sG), B = B * (s/sB))
+}
+
+psf_match_optional <- function(img, sigma = 0){
+  if (sigma <= 0) return(img)
+  if (!requireNamespace("imager", quietly = TRUE)) stop("imager not installed.")
+  as.matrix(imager::isoblur(imager::as.cimg(img), sigma = sigma))
+}
+
+make_mask <- function(ref, q = 0.30){
+  th <- safe_q(ref, q)
+  is.finite(ref) & ref > th
+}
 make_rgb <- function(cube,
                      r = 12, g = 7, b = 2,                  # bands (can be vectors)
                      ref_band = NULL,                       # mask reference band
@@ -131,4 +164,24 @@ make_rgb <- function(cube,
   
   list(RGB = arr, R = arr[,,1], G = arr[,,2], B = arr[,,3],
        mask = mask, qlo = qlo, qhi = qhi)
+}
+
+plot_rgb_gg <- function(rgb){
+  stopifnot(all(c("R","G","B") %in% names(rgb)))
+  H <- nrow(rgb$R); W <- ncol(rgb$R)
+  
+  df <- data.frame(
+    x = rep(1:W, each = H),
+    y = rep(H:1,  W),
+    R = as.vector(rgb$R),
+    G = as.vector(rgb$G),
+    B = as.vector(rgb$B)
+  )
+  df$hex <- grDevices::rgb(df$R, df$G, df$B)
+  
+  ggplot(df, aes(x = -y, y = x, fill = hex)) +   # 90° CCW
+    geom_raster() +
+    scale_fill_identity() +
+    coord_equal() +
+    theme_void()
 }
