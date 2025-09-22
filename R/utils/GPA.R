@@ -77,12 +77,12 @@ gpa <- function(img,
   
   # Basic gradient stats
   mag_stats <- c(mean = mean(mag), sd = sd(mag), median = median(mag),
-                 q90 = as.numeric(quantile(mag, 0.90)),
-                 q95 = as.numeric(quantile(mag, 0.95)),
+                 q90 = as.numeric(quantile(mag, 0.90, na.rm = TRUE)),
+                 q95 = as.numeric(quantile(mag, 0.95, na.rm = TRUE)),
                  max = max(mag))
   
   # Edge density above quantile threshold
-  thr <- as.numeric(quantile(mag, edge_q))
+  thr <- as.numeric(quantile(mag, edge_q, na.rm = TRUE))
   strong_edges <- mag >= thr
   edge_density <- mean(strong_edges)
   
@@ -194,11 +194,15 @@ plot_gpa_quick <- function(res) {
 }
 
 
-Xfits <- FITSio::readFITS("..//..//data/raw/datacube_reg1.fits")
+Xfits <- FITSio::readFITS("..//..//sed_maps/logM.fits")
 cube  <- Xfits$imDat
+cube[is.na(cube)] <- 0
+
+
 
 # img is a numeric matrix (e.g., grayscale image or 2-D field)
-res <- gpa(cube[,,1])
+res <- gpa(cube,edge_q = 0.875)
+
 
 # quick summary
 res$magnitude_stats
