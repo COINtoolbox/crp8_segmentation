@@ -72,7 +72,11 @@ source("utils/compact_labels.R")
 source("utils/cube_to_matrix.R")
 source("utils/le_energy_map.R")
 source("utils/umap_energy_map.R")
+source("utils/rgb_mask_to_df.R")
+source("utils/smart_sum.R")
+source("utils/make_rgb.R")
 
+source("Segmentantion_functions/segment_sobel.R")
 source("Segmentantion_functions/segment_hdbscan.R")
 
 Xfits <- FITSio::readFITS("..//data/raw/datacube_reg2.fits")
@@ -80,35 +84,51 @@ cube  <- Xfits$imDat
 H <- dim(cube)[1]; W <- dim(cube)[2]
 
 df_mat <- cube_to_matrix(Xfits)
-P  <- pca_energy_map(df_mat, H, W, d = 10)
+#P  <- pca_energy_map(df_mat, H, W, d = 10)
+P <- smart_sum(cube, method="localivar", bg_q=0.2)
+
+#P <- copula_energy(cube) 
 #P <- umap_energy_map(df_mat, H, W, d = 5, n_neighbors = 20, min_dist = 0.1,
 #                     xy_weight = 0.25, energy = "mahalanobis")
 
+# Child segmentation → clean → fill
+L_edge_groups <- segment_sobel(
+  P, edge_q = 0.8, drop_frame = TRUE,
+  close_k = 3L, close_iters = 1L,
+  conn = 8L, min_size = 25L
+)
 
 
-# A) Just see the edges
-E <- sobel_edges(P, smooth_sigma = 1.5, q_edge = 0.9, close_iters = 1, se_size = 3)
-image(E, col = c("black", "white"))
 
-# B) Build a foreground mask from edges (galaxy + arms; background off)
-M <- sobel_fill_mask(P, smooth_sigma = 1.5, q_edge = 0.9,
-                     close_iters = 1, se_size = 3,
-                     keep = "largest", min_size = 300)
-image(M, col = c("black","white"))
+#image(L_edge_groups > 0L, col = c("#fff7c7", "#6a0027"))  # quick visual
+
+cube_rgb <- make_rgb(cube, r=7, g=4, b=2,
+                     pansharpen=0.5, guide_band=2,
+                     upscale=1, unsharp_sigma=1.1, unsharp_amount=0.7,
+                     sat=0.9, gamma=1.0)
+
+
+df <- rgb_mask_to_df(cube_rgb, L_edge_groups, rotate_ccw = TRUE)
+ggplot(df, aes(x = -x_plot, y = y_plot, fill = hex)) +
+  geom_raster() +
+  scale_fill_identity() +
+  coord_equal() +
+  theme_void()
+
+
+
+
+
+
+
+
 
 # C) Apply before your HDBSCAN
 
 L_child <- segment_hdbscan(P, q_fore = 0.875, scale_xy = 1, scale_I = 1, minPts = 25)
 
 
-# Child segmentation → clean → fill
 
-L_child2  <- L_child |> filter_by_size(min_size = 20) |> fill_holes_per_label()
-image(L_child2,col=viridis(100))
-
-cub_cut <- mask_cube(cube,res$edge$mask,mode="na")
-
-image(asinh(cub_cut[,,4]),col=viridis(100))
 
 
 cube_cap <- list(imDat = cub_cut)   # cube_2 is your [nx,ny,nb] array

@@ -201,7 +201,7 @@ cube[is.na(cube)] <- 0
 
 
 # img is a numeric matrix (e.g., grayscale image or 2-D field)
-res <- gpa(cube,edge_q = 0.875)
+res <- gpa(P,edge_q = 0.875)
 
 
 # quick summary
