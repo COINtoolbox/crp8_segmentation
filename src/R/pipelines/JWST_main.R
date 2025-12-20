@@ -121,6 +121,8 @@ mask_rec <- is.finite(rec_all) & (rec_all > 0)
 cube_na  <- guara::mask_cube(cube, mask_rec, mode = "na")
 N <- 40
 seg_cap  <- capivara::segment(list(imDat = cube_na), N = N)
+FITSio::writeFITSim(seg_cap$cluster_map,file="/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/segmentation/starlet_capivara/sagui1_2_3.fits",header = seg_cap$header,
+                    axDat = seg_cap$axDat)
 
 
 palette_van_gogh <- function(n) {
