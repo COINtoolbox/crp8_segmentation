@@ -7,6 +7,12 @@ suppressPackageStartupMessages({
   library(dplyr)
   library(ggplot2)
 })
+palette_van_gogh <- function(n) {
+  base <- c("#263C8B", "#547FFF","#405CFF",
+            "#FFFAA3", "#FFDE38", "#BFA524"
+  )
+  grDevices::colorRampPalette(base)(n)
+}
 require(guara)
 set.seed(42)
 mat_to_df <- function(mat, label) {
@@ -27,7 +33,7 @@ mat_to_df <- function(mat, label) {
 
 
 
-fits_path <- "/Users/rd23aag/Documents/GitHub/crp8_segmentation/data/datacube_sagui4.fits"
+fits_path <- "/Users/rd23aag/Documents/GitHub/crp8_segmentation/data/datacube_sagui5_6.fits"
 
 X    <- FITSio::readFITS(fits_path)
 cube <- X$imDat    # [nx, ny, nlam]
@@ -91,7 +97,7 @@ df_all <- df_all %>%
 
 
 
-pdf("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/figures/starlet/starlet_2d_sagui4.pdf",height = 4.5,width = 3.75)
+pdf("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/figures/starlet/starlet_2d_sagui5_6.pdf",height = 3.5,width = 7.5)
 ggplot(df_all, aes(x = y, y = x, fill = value_norm)) +
   geom_raster() +
   coord_fixed() +
@@ -128,26 +134,21 @@ cluster_map_vis[!is.finite(cluster_map_vis)] <- 0L   # background/masked -> 0
 
 FITSio::writeFITSim(
   cluster_map_vis,
-  file   = "/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/segmentation/starlet_capivara/sagui4.fits",
+  file   = "/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/segmentation/starlet_capivara/sagui5_6.fits",
   header = seg_cap$header,
   axDat  = seg_cap$axDat
 )
 
 
-palette_van_gogh <- function(n) {
-  base <- c("#263C8B", "#547FFF","#405CFF",
-    "#FFFAA3", "#FFDE38", "#BFA524"
-  )
-  grDevices::colorRampPalette(base)(n)
-}
 
-pdf("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/figures/sagui_seg/sagui_seg4.pdf",height = 6.5,width = 5.5)
+
+pdf("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/figures/sagui_seg/sagui_seg5_6.pdf",height = 3.5,width = 6)
 plot_cluster_voronoi_style(
   seg_cap,
   palette = palette_van_gogh(N),
   border_color = "black",
   border_linewidth = 1,
-  background_color = "#d9bea1"
+  background_color = "black"
 )
 dev.off()
 
@@ -186,7 +187,7 @@ flux_ordered_jy <- SED$flux_wide %>%
   )
 
 readr::write_csv(flux_ordered_jy,
-                 "/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/flux_per_region/SED_flux_wide_sagui_4.csv")
+                 "/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/flux_per_region/SED_flux_wide_sagui_5_6.csv")
 
 
 
