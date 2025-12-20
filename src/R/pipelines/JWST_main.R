@@ -25,7 +25,7 @@ mat_to_df <- function(mat, label) {
 ## 1. Load datacube & collapse white light
 ## ============================================================
 
-fits_path <- "/Users/rd23aag/Documents/GitHub/crp8_segmentation/data/raw/datacube_reg8.fits"
+fits_path <- "/Users/rd23aag/Documents/GitHub/crp8_segmentation/data/datacube_sagui1_2_3.fits"
 
 X    <- FITSio::readFITS(fits_path)
 cube <- X$imDat    # [nx, ny, nlam]
@@ -88,13 +88,14 @@ df_all <- df_all %>%
   dplyr::ungroup()
 
 
-pdf("starlet_2d_sagui6_7.pdf",height = 6.5,width = 8.5)
+
+pdf("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/figures/starlet/starlet_2d_sagui1_2_3.pdf",height = 4,width = 9)
 ggplot(df_all, aes(x = y, y = x, fill = value_norm)) +
   geom_raster() +
   coord_fixed() +
   scale_fill_gradientn(
     colours  = palette_van_gogh(256),
-    na.value = "#d9bea1",
+    na.value = "black",
     limits   = c(0, 1)    # very important!
   ) +
   facet_wrap(~ panel, ncol = 3) +
@@ -102,7 +103,7 @@ ggplot(df_all, aes(x = y, y = x, fill = value_norm)) +
   theme(
     strip.background  = element_rect(fill = "gray80", colour = NA),
     panel.grid        = element_blank(),
-    panel.background  = element_rect(fill = "#d9bea1", colour = NA),
+    panel.background  = element_rect(fill = "black", colour = NA),
     axis.title        = element_blank(),
     axis.text         = element_blank(),
     axis.ticks        = element_blank(),
@@ -129,7 +130,7 @@ palette_van_gogh <- function(n) {
   grDevices::colorRampPalette(base)(n)
 }
 
-pdf("sagui_seg6_7.pdf",height = 6.5,width = 5.5)
+pdf("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/figures/sagui_seg/sagui_seg1_2_3.pdf",height = 6.5,width = 5.5)
 plot_cluster_voronoi_style(
   seg_cap,
   palette = palette_van_gogh(N),
@@ -141,7 +142,46 @@ dev.off()
 
 
 
-fits_dir   <- "/Users/rd23aag/Documents/GitHub/crp8_segmentation/data/raw"
+SED <- RegionPhotometry(
+  X,
+  seg_cap$cluster_map,
+  error_fallback = "poisson"
+)
+
+
+num_cols  <- as.character(0:13)        # adjust to nbands if needed
+err_cols  <- paste0(num_cols, "_err")
+neff_cols <- paste0(num_cols, "_n_eff")
+filters <- nircam_filters
+stopifnot(length(filters) == length(num_cols))
+
+flux_ordered_jy <- SED$flux_wide %>%
+  # convert units first
+  dplyr::mutate(
+    dplyr::across(dplyr::all_of(num_cols),  ~ .x * 1e-8),
+    dplyr::across(dplyr::all_of(err_cols),  ~ .x * 1e-8)
+  ) %>%
+  # rename columns to filter names
+  dplyr::rename_with(~ filters, .cols = dplyr::all_of(num_cols)) %>%
+  dplyr::rename_with(~ paste0(filters, "_err"),  .cols = dplyr::all_of(err_cols)) %>%
+  dplyr::rename_with(~ paste0(filters, "_n_eff"),.cols = dplyr::all_of(neff_cols)) %>%
+  # NOW enforce wavelength-ordered column layout
+  dplyr::relocate(
+    dplyr::any_of(c("region_id", "region", "cluster", "cluster_id")),  # keep whichever exists
+    dplyr::any_of("n_pix"),
+    dplyr::all_of(filters),
+    dplyr::all_of(paste0(filters, "_err")),
+    dplyr::all_of(paste0(filters, "_n_eff"))
+  )
+
+readr::write_csv(flux_ordered_jy,
+                 "/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/flux_per_region/SED_flux_wide_sagui_1_2_3.csv")
+
+
+
+
+
+fits_dir   <- "/Users/rd23aag/Documents/GitHub/crp8_segmentation/data"
 fits_paths <- list.files(fits_dir, pattern = "\\.fits$", full.names = TRUE)
 
 seg_df_all <- do.call(rbind, lapply(fits_paths, function(fits_path) {
@@ -149,17 +189,17 @@ seg_df_all <- do.call(rbind, lapply(fits_paths, function(fits_path) {
   X    <- FITSio::readFITS(fits_path)
   cube <- X$imDat
 
-  collapsed <- collapse_white_light(cube, kclip = 2)
+  collapsed <- collapse_white_light(cube, kclip = 1)
 
-  dec <- guara::starlet_mask(collapsed, J = 7)
-  rec_all <- starlet_reconstruct(dec, keep_scales = 2:7,
+  dec <- guara::starlet_mask(collapsed, J = 5)
+  rec_all <- starlet_reconstruct(dec, keep_scales = 2:5,
                                  include_coarse = FALSE,
                                  denoise_k = 2, mode = "soft")
 
   mask_rec <- is.finite(rec_all) & (rec_all > 0)
 
   cube_na <- guara::mask_cube(cube, mask_rec, mode = "na")
-  seg_cap <- capivara::segment(list(imDat = cube_na), N = 30)
+  seg_cap <- capivara::segment(list(imDat = cube_na), N = 40)
 
   lab <- seg_cap$cluster_map
   dataset_id <- tools::file_path_sans_ext(basename(fits_path))
@@ -179,19 +219,30 @@ ggplot(seg_df_all, aes(x = y, y = x, fill = factor(cluster))) +
   geom_raster() +
 #  coord_fixed() +
   scale_fill_manual(values = palette_van_gogh(max(8, N_global)),
-                    na.value = "#d9bea1") +
+                    na.value = "black") +
   facet_wrap(~ dataset, ncol = 3,scales="free") +
   theme_bw() +
   theme(
     strip.background = element_rect(fill = "gray80", colour = NA),
     panel.grid       = element_blank(),
-    panel.background = element_rect(fill = "#d9bea1", colour = NA),
+    panel.background = element_rect(fill = "black", colour = NA),
     axis.title       = element_blank(),
     axis.text        = element_blank(),
     axis.ticks       = element_blank(),
     legend.position  = "none",
     strip.text       = element_text(size = 10, face = "bold")
   )
+
+
+
+
+
+
+
+
+
+
+
 
 
 sed <- read.csv("sagui-5-6_sed_results.csv")
