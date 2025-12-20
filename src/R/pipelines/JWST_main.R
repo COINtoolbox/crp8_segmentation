@@ -25,7 +25,9 @@ mat_to_df <- function(mat, label) {
 ## 1. Load datacube & collapse white light
 ## ============================================================
 
-fits_path <- "/Users/rd23aag/Documents/GitHub/crp8_segmentation/data/datacube_sagui1_2_3.fits"
+
+
+fits_path <- "/Users/rd23aag/Documents/GitHub/crp8_segmentation/data/datacube_sagui4.fits"
 
 X    <- FITSio::readFITS(fits_path)
 cube <- X$imDat    # [nx, ny, nlam]
@@ -89,7 +91,7 @@ df_all <- df_all %>%
 
 
 
-pdf("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/figures/starlet/starlet_2d_sagui1_2_3.pdf",height = 4,width = 9)
+pdf("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/figures/starlet/starlet_2d_sagui4.pdf",height = 4.5,width = 3.75)
 ggplot(df_all, aes(x = y, y = x, fill = value_norm)) +
   geom_raster() +
   coord_fixed() +
@@ -121,8 +123,15 @@ mask_rec <- is.finite(rec_all) & (rec_all > 0)
 cube_na  <- guara::mask_cube(cube, mask_rec, mode = "na")
 N <- 40
 seg_cap  <- capivara::segment(list(imDat = cube_na), N = N)
-FITSio::writeFITSim(seg_cap$cluster_map,file="/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/segmentation/starlet_capivara/sagui1_2_3.fits",header = seg_cap$header,
-                    axDat = seg_cap$axDat)
+cluster_map_vis <- seg_cap$cluster_map
+cluster_map_vis[!is.finite(cluster_map_vis)] <- 0L   # background/masked -> 0
+
+FITSio::writeFITSim(
+  cluster_map_vis,
+  file   = "/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/segmentation/starlet_capivara/sagui4.fits",
+  header = seg_cap$header,
+  axDat  = seg_cap$axDat
+)
 
 
 palette_van_gogh <- function(n) {
@@ -132,7 +141,7 @@ palette_van_gogh <- function(n) {
   grDevices::colorRampPalette(base)(n)
 }
 
-pdf("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/figures/sagui_seg/sagui_seg1_2_3.pdf",height = 6.5,width = 5.5)
+pdf("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/figures/sagui_seg/sagui_seg4.pdf",height = 6.5,width = 5.5)
 plot_cluster_voronoi_style(
   seg_cap,
   palette = palette_van_gogh(N),
@@ -151,10 +160,10 @@ SED <- RegionPhotometry(
 )
 
 
-num_cols  <- as.character(0:13)        # adjust to nbands if needed
+num_cols  <- as.character(0:9)        # adjust to nbands if needed
 err_cols  <- paste0(num_cols, "_err")
 neff_cols <- paste0(num_cols, "_n_eff")
-filters <- nircam_filters
+filters <- nircam_filters[1:10]
 stopifnot(length(filters) == length(num_cols))
 
 flux_ordered_jy <- SED$flux_wide %>%
@@ -177,7 +186,16 @@ flux_ordered_jy <- SED$flux_wide %>%
   )
 
 readr::write_csv(flux_ordered_jy,
-                 "/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/flux_per_region/SED_flux_wide_sagui_1_2_3.csv")
+                 "/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/flux_per_region/SED_flux_wide_sagui_4.csv")
+
+
+
+
+
+
+
+
+
 
 
 
