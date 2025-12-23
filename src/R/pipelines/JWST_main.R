@@ -30,10 +30,60 @@ mat_to_df <- function(mat, label) {
 ## ============================================================
 ## 1. Load datacube & collapse white light
 ## ============================================================
+base_dir <- "/Users/rd23aag/Documents/GitHub/crp8_segmentation"
+
+get_sagui_tag <- function(path) {
+  fname <- basename(path)
+
+  # sagui + 1, 2, or 3 integers: sagui10, sagui5_6, sagui1_2_3
+  m <- regexpr("sagui[0-9]+(_[0-9]+){0,2}", fname)
+  if (m == -1) {
+    stop("Could not extract sagui index from: ", fname)
+  }
+
+  regmatches(fname, m)
+}
 
 
+make_sagui_paths <- function(tag, base_dir) {
+  list(
+    pdf = file.path(
+      base_dir, "results/figures/starlet",
+      paste0("starlet_2d_", tag, ".pdf")
+    ),
+    png = file.path(
+      base_dir, "results/figures/sagui_seg",
+      paste0(tag, ".png")
+    ),
+    fits = file.path(
+      base_dir, "results/segmentation/starlet_capivara",
+      paste0(tag, ".fits")
+    ),
+    csv = file.path(
+      base_dir, "results/flux_per_region",
+      paste0("SED_flux_wide_", tag, ".csv")
+    )
+  )
+}
 
-fits_path <- "/Users/rd23aag/Documents/GitHub/crp8_segmentation/data/datacube_sagui5_6.fits"
+fits_dir <- file.path(base_dir, "data")
+fits_files <- list.files(
+  fits_dir,
+  pattern = "\\.fits$",
+  full.names = TRUE
+)
+
+#tag   <- get_sagui_tag(fits_path)
+#paths <- make_sagui_paths(tag, base_dir)
+
+#get_sagui_tag(fits_path)
+
+for (fits_path in fits_files) {
+
+#fits_path <- "/Users/rd23aag/Documents/GitHub/crp8_segmentation/data/datacube_sagui10.fits"
+
+tag <- get_sagui_tag(fits_path)
+paths <- make_sagui_paths(tag, base_dir)
 
 X    <- FITSio::readFITS(fits_path)
 cube <- X$imDat    # [nx, ny, nlam]
@@ -43,6 +93,24 @@ nlam <- dim(cube)[3]
 
 
 collapsed <- collapse_white_light(cube, kclip = 2)
+
+#ref <- X$imDat[,,5]
+#thr <- quantile(ref[is.finite(ref)], 0.7, na.rm=TRUE)  # keep brightest 20%
+#gal_region <- is.finite(ref) & ref >= thr
+#res <- pixel_binning_cube(
+#  cube = X$imDat,
+#  cube_err = NULL,
+#  err_model = "relative",
+#  err_frac = 0.05,
+#  gal_region = gal_region,
+#  SNR = rep(5, dim(X$imDat)[3]),
+#  Dmin_bin = 3,
+#  del_r = 4.0,
+#  redc_chi2_limit = 2.0
+#)
+
+#bin_map <- res$bin_map
+#image(log(bin_map), col = rev(viridis::turbo(256)))
 
 
 image(asinh_stretch(collapsed), col = viridis::turbo(256))
@@ -79,7 +147,7 @@ for (j in 1:5) {
   )
 
   df_list[[length(df_list) + 1]] <-
-    mat_to_df(rec_j, paste0("Scale j = ", j))
+    mat_to_df(rec_j, paste0("j = ", j))
 }
 
 df_all <- do.call(rbind, df_list)
@@ -97,7 +165,7 @@ df_all <- df_all %>%
 
 
 
-pdf("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/figures/starlet/starlet_2d_sagui5_6.pdf",height = 3.5,width = 7.5)
+pdf(paths$pdf,height = 5,width = 5)
 ggplot(df_all, aes(x = y, y = x, fill = value_norm)) +
   geom_raster() +
   coord_fixed() +
@@ -134,7 +202,7 @@ cluster_map_vis[!is.finite(cluster_map_vis)] <- 0L   # background/masked -> 0
 
 FITSio::writeFITSim(
   cluster_map_vis,
-  file   = "/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/segmentation/starlet_capivara/sagui5_6.fits",
+  file   = paths$fits,
   header = seg_cap$header,
   axDat  = seg_cap$axDat
 )
@@ -142,14 +210,18 @@ FITSio::writeFITSim(
 
 
 
-pdf("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/figures/sagui_seg/sagui_seg5_6.pdf",height = 3.5,width = 6)
-plot_cluster_voronoi_style(
+#pdf("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/figures/sagui_seg/sagui_seg5_6.pdf",height = 3.5,width = 6)
+p <- plot_cluster_voronoi_style(
   seg_cap,
   palette = palette_van_gogh(N),
   border_color = "black",
   border_linewidth = 1,
   background_color = "black"
 )
+ragg::agg_png(paths$png, width = 2000, height = 2000, res = 300)
+print(p)
+dev.off()
+
 dev.off()
 
 
@@ -159,38 +231,48 @@ SED <- RegionPhotometry(
   seg_cap$cluster_map,
   error_fallback = "poisson"
 )
+band_cols <- names(SED$flux_wide)[grepl("^[0-9]+$", names(SED$flux_wide))]
+band_cols <- as.character(sort(as.integer(band_cols)))
 
 
-num_cols  <- as.character(0:9)        # adjust to nbands if needed
-err_cols  <- paste0(num_cols, "_err")
-neff_cols <- paste0(num_cols, "_n_eff")
-filters <- nircam_filters[1:10]
-stopifnot(length(filters) == length(num_cols))
+err_cols  <- paste0(band_cols, "_err")
+neff_cols <- paste0(band_cols, "_n_eff")
+
+err_cols  <- err_cols[err_cols %in% names(SED$flux_wide)]
+neff_cols <- neff_cols[neff_cols %in% names(SED$flux_wide)]
+
+
+nircam_lambda_um <- c(
+  F090W = 0.902, F115W = 1.154, F150W = 1.501, F182M = 1.842,
+  F200W = 1.989, F210M = 2.099, F277W = 2.770, F335M = 3.365,
+  F356W = 3.563, F410M = 4.082, F430M = 4.286, F444W = 4.421,
+  F460M = 4.620, F480M = 4.828
+)
+nircam_filters <- names(nircam_lambda_um)
+
+filters <- nircam_filters[seq_along(band_cols)]
 
 flux_ordered_jy <- SED$flux_wide %>%
-  # convert units first
   dplyr::mutate(
-    dplyr::across(dplyr::all_of(num_cols),  ~ .x * 1e-8),
+    dplyr::across(dplyr::all_of(band_cols), ~ .x * 1e-8),
     dplyr::across(dplyr::all_of(err_cols),  ~ .x * 1e-8)
   ) %>%
-  # rename columns to filter names
-  dplyr::rename_with(~ filters, .cols = dplyr::all_of(num_cols)) %>%
-  dplyr::rename_with(~ paste0(filters, "_err"),  .cols = dplyr::all_of(err_cols)) %>%
-  dplyr::rename_with(~ paste0(filters, "_n_eff"),.cols = dplyr::all_of(neff_cols)) %>%
-  # NOW enforce wavelength-ordered column layout
+  dplyr::rename_with(~ filters, .cols = dplyr::all_of(band_cols)) %>%
+  dplyr::rename_with(~ paste0(filters, "_err"),
+                     .cols = dplyr::all_of(err_cols)) %>%
+  dplyr::rename_with(~ paste0(filters, "_n_eff"),
+                     .cols = dplyr::all_of(neff_cols)) %>%
   dplyr::relocate(
-    dplyr::any_of(c("region_id", "region", "cluster", "cluster_id")),  # keep whichever exists
+    dplyr::any_of(c("region_id", "region", "cluster", "cluster_id")),
     dplyr::any_of("n_pix"),
     dplyr::all_of(filters),
-    dplyr::all_of(paste0(filters, "_err")),
-    dplyr::all_of(paste0(filters, "_n_eff"))
+    dplyr::any_of(paste0(filters, "_err")),
+    dplyr::any_of(paste0(filters, "_n_eff"))
   )
 
-readr::write_csv(flux_ordered_jy,
-                 "/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/flux_per_region/SED_flux_wide_sagui_5_6.csv")
+readr::write_csv(flux_ordered_jy,paths$csv)
 
-
-
+}
 
 
 
@@ -266,7 +348,7 @@ ggplot(seg_df_all, aes(x = y, y = x, fill = factor(cluster))) +
 
 
 
-sed <- read.csv("sagui-5-6_sed_results.csv")
+sed <- read.csv("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/sed_fitting/sagui-5-6_sed_results.csv")
 
 # SFR(t) for exponential declining SFH
 sfr_exp <- function(t, tau) {
@@ -318,13 +400,12 @@ sed2 <- sed %>%
 
 # Example: mass per region
 Age <- sed2$t_mw_gyr
-names(Age) <- as.character(seq_len(nrow(pars)))  # region 1..N
 
-p_mass <- plot_property_map(
-  cluster_map = seg_cap$cluster_map,
+p_mass <- plot_property_voronoi_style(
+  cluster_data = seg_cap,
   values      = Age,
-  palette     = "magma",
-  value_label = "Age"
+  value_label = "AGE",
+  palette     = palette_van_gogh(N)
 )
 
 p_mass
@@ -334,10 +415,10 @@ sfr_log10 <- (sed2$sfr_now)
 
 names(sfr_log10) <- as.character(seq_len(nrow(sed2)))
 
-p_sfr <- plot_property_map(
-  cluster_map = seg_cap$cluster_map,
-  values      = asinh_stretch(sfr_log10),
-  palette     = "plasma",
+p_sfr <- plot_property_voronoi_style(
+  cluster_data = seg_cap,
+  values      = sfr_log10,
+  palette     = palette_van_gogh(N),
   na_color = "black",
   value_label = expression("SFR [" * M["\u2609"] * "/yr]")
 )
@@ -345,6 +426,44 @@ p_sfr <- plot_property_map(
 p_sfr
 
 writeFITSim(seg_cap$cluster_map,"sagui.fits")
+
+
+
+
+# regiões (como você já constrói)
+obj <- build_regions_and_points(seg_cap, Age)
+sf_regions <- obj$regions
+
+# grafo
+W <- region_adjacency(sf_regions)
+
+# suavização espacial (controle aqui!)
+Age_smooth <- spatial_smooth_graph(
+  values = sf_regions$Value,
+  W      = W,
+  lambda = 0.25   # ↑ mais suave, ↓ mais local
+)
+
+sf_regions$Age_smooth <- Age_smooth
+
+ggplot(sf_regions) +
+  geom_sf(aes(fill = Age_smooth), color = NA) +
+  geom_sf(data = obj$boundary, color = "white", linewidth = 0.5) +
+  scale_fill_gradientn(colours = palette_van_gogh(N), na.value = "black") +
+  theme_void() +
+  theme(
+    plot.background  = element_rect(fill = "black", color = NA),
+    panel.background = element_rect(fill = "black", color = NA)
+  )
+
+
+
+
+
+
+
+
+
 
 
 ## ------------------------------------------------------------
