@@ -7,12 +7,31 @@ suppressPackageStartupMessages({
   library(dplyr)
   library(ggplot2)
 })
-palette_van_gogh <- function(n) {
-  base <- c("#263C8B", "#547FFF","#405CFF",
-            "#FFFAA3", "#FFDE38", "#BFA524"
+
+palette_van_gogh <- function(n = 40) {
+  bands <- list(
+    c("#80B7FF", "#547FFF", "#405CFF", "#405CFF", "#263C8B"), # blues
+    c("#2E6F6B", "#4C8C86"),             # teals
+    c("#FFFAA3", "#FFDE38", "#F2B705"),            # yellows
+    c("#D4A017", "#BFA524", "#8C6D1F")  # ochre/browns
   )
-  grDevices::colorRampPalette(base)(n)
+
+  # Build enough colors from each band
+  k <- length(bands)
+  per <- ceiling(n / k)
+  cols <- unlist(lapply(bands, function(b)
+    grDevices::colorRampPalette(b, space="Lab")(per)
+  ))
+
+  # Interleave bands: 1st of each band, 2nd of each band, ...
+  mat <- matrix(cols, nrow = k, byrow = TRUE)
+  out <- as.vector(t(mat))
+  out[seq_len(n)]
 }
+
+
+
+
 require(guara)
 set.seed(42)
 mat_to_df <- function(mat, label) {
@@ -73,14 +92,11 @@ fits_files <- list.files(
   full.names = TRUE
 )
 
-#tag   <- get_sagui_tag(fits_path)
-#paths <- make_sagui_paths(tag, base_dir)
 
-#get_sagui_tag(fits_path)
 
 for (fits_path in fits_files) {
 
-#fits_path <- "/Users/rd23aag/Documents/GitHub/crp8_segmentation/data/datacube_sagui10.fits"
+#fits_path <- "/Users/rd23aag/Documents/GitHub/crp8_segmentation/data/datacube_sagui7.fits"
 
 tag <- get_sagui_tag(fits_path)
 paths <- make_sagui_paths(tag, base_dir)
@@ -90,7 +106,6 @@ cube <- X$imDat    # [nx, ny, nlam]
 nx   <- dim(cube)[1]
 ny   <- dim(cube)[2]
 nlam <- dim(cube)[3]
-
 
 collapsed <- collapse_white_light(cube, kclip = 2)
 
@@ -113,31 +128,38 @@ collapsed <- collapse_white_light(cube, kclip = 2)
 #image(log(bin_map), col = rev(viridis::turbo(256)))
 
 
-image(asinh_stretch(collapsed), col = viridis::turbo(256))
 
 
 ## ============================================================
 ## 2. Starlet decomposition & reconstruction
 ## ============================================================
-J   <- 5
+#J   <- 5
+auto_J <- function(img) {
+  m <- min(dim(img))
+  max(3L, floor(log2(m)) - 2L)
+}
+#J <- auto_J(collapsed)
+J <- 5
 dec <- guara::starlet_mask(collapsed, J = J)
 
 # Reconstruction: example with scales 2–6, no coarse, soft denoise
 rec_all <- starlet_reconstruct(
   dec,
-  keep_scales    = 2:5,
+  keep_scales    = 2:J,
   include_coarse = FALSE,
   denoise_k      = 2,
   mode           = "soft"
 )
-J <- length(dec$w)  # or set explicitly, e.g. J <- 7
+
+
+#J <- length(dec$w)  # or set explicitly, e.g. J <- 7
 df_list <- list()
 
 ## Original image
 df_list[[1]] <- mat_to_df(collapsed, "Original")
 
 ## For each scale j, reconstruct using only that scale
-for (j in 1:5) {
+for (j in 1:J) {
   rec_j <- starlet_reconstruct(
     dec,
     keep_scales    = j,        # <- only this scale
@@ -165,14 +187,13 @@ df_all <- df_all %>%
 
 
 
-pdf(paths$pdf,height = 5,width = 5)
-ggplot(df_all, aes(x = y, y = x, fill = value_norm)) +
+p <- ggplot(df_all, aes(x = y, y = x, fill = value_norm)) +
   geom_raster() +
   coord_fixed() +
   scale_fill_gradientn(
     colours  = palette_van_gogh(256),
     na.value = "black",
-    limits   = c(0, 1)    # very important!
+    limits   = c(0, 1)
   ) +
   facet_wrap(~ panel, ncol = 3) +
   theme_bw() +
@@ -186,6 +207,9 @@ ggplot(df_all, aes(x = y, y = x, fill = value_norm)) +
     legend.position   = "none",
     strip.text        = element_text(size = 10, face = "bold")
   )
+
+pdf(paths$pdf, height = 5, width = 5, useDingbats = FALSE)
+print(p)
 dev.off()
 
 
@@ -195,7 +219,7 @@ dev.off()
 mask_rec <- is.finite(rec_all) & (rec_all > 0)
 ## (b) Segment original cube but masked by starlet reconstruction
 cube_na  <- guara::mask_cube(cube, mask_rec, mode = "na")
-N <- 40
+N <- 50
 seg_cap  <- capivara::segment(list(imDat = cube_na), N = N)
 cluster_map_vis <- seg_cap$cluster_map
 cluster_map_vis[!is.finite(cluster_map_vis)] <- 0L   # background/masked -> 0
@@ -216,13 +240,13 @@ p <- plot_cluster_voronoi_style(
   palette = palette_van_gogh(N),
   border_color = "black",
   border_linewidth = 1,
-  background_color = "black"
+  background_color = "#2F2F2F"
 )
 ragg::agg_png(paths$png, width = 2000, height = 2000, res = 300)
 print(p)
 dev.off()
 
-dev.off()
+
 
 
 
