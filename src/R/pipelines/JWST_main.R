@@ -219,7 +219,7 @@ dev.off()
 mask_rec <- is.finite(rec_all) & (rec_all > 0)
 ## (b) Segment original cube but masked by starlet reconstruction
 cube_na  <- guara::mask_cube(cube, mask_rec, mode = "na")
-N <- 50
+N <- 40
 seg_cap  <- capivara::segment(list(imDat = cube_na), N = N)
 cluster_map_vis <- seg_cap$cluster_map
 cluster_map_vis[!is.finite(cluster_map_vis)] <- 0L   # background/masked -> 0
@@ -300,79 +300,135 @@ readr::write_csv(flux_ordered_jy,paths$csv)
 
 
 
+seg_cap <- FITSio::readFITS("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/segmentation/starlet_capivara/sagui10.fits")
+
+sed <- read.csv("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/sed_fitting/sagui-10_sed_results.csv")
+
+
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(ggplot2)
+
+#-----------------------------
+#  A) Your SFH helpers
+#-----------------------------
+sfr_exp <- function(t, tau) exp(-t / tau)
+
+mw_age_exp <- function(tage, tau, n_grid = 1000) {
+  t <- seq(0, tage, length.out = n_grid)
+  dt <- t[2] - t[1]
+  sfr <- sfr_exp(t, tau)
+  num <- sum((tage - t) * sfr) * dt
+  den <- sum(sfr) * dt
+  num / den
+}
+
+current_sfr <- function(mass, tage, tau) {
+  A <- mass / (tau * (1 - exp(-tage / tau)))
+  sfr_now_gyr <- A * exp(-tage / tau)     # Msun/Gyr
+  sfr_now_gyr / 1e9                       # Msun/yr
+}
 
 
 
+mat_to_df <- function(Z, panel = "value", flip_y = TRUE, transpose = FALSE) {
+  if (transpose) Z <- t(Z)
 
+  nx <- nrow(Z);
+  ny <- ncol(Z)
+  df <- expand.grid(x = seq_len(nx), y = seq_len(ny))
+  df$value <- as.vector(Z)  # column-major, consistent with expand.grid default
 
+  df$panel <- panel
 
-
-
-fits_dir   <- "/Users/rd23aag/Documents/GitHub/crp8_segmentation/data"
-fits_paths <- list.files(fits_dir, pattern = "\\.fits$", full.names = TRUE)
-
-seg_df_all <- do.call(rbind, lapply(fits_paths, function(fits_path) {
-
-  X    <- FITSio::readFITS(fits_path)
-  cube <- X$imDat
-
-  collapsed <- collapse_white_light(cube, kclip = 1)
-
-  dec <- guara::starlet_mask(collapsed, J = 5)
-  rec_all <- starlet_reconstruct(dec, keep_scales = 2:5,
-                                 include_coarse = FALSE,
-                                 denoise_k = 2, mode = "soft")
-
-  mask_rec <- is.finite(rec_all) & (rec_all > 0)
-
-  cube_na <- guara::mask_cube(cube, mask_rec, mode = "na")
-  seg_cap <- capivara::segment(list(imDat = cube_na), N = 40)
-
-  lab <- seg_cap$cluster_map
-  dataset_id <- tools::file_path_sans_ext(basename(fits_path))
-
-  df <- as.data.frame(as.table(lab))
-  names(df) <- c("y","x","cluster")
-  df$y <- as.integer(df$y)
-  df$x <- as.integer(df$x)
-  df$dataset <- dataset_id
+  # FITS images often appear upside-down in ggplot coordinates; this fixes it visually
+  if (flip_y) df$y <- ny - df$y + 1
 
   df
-}))
+}
 
-N_global <- max(seg_df_all$cluster, na.rm = TRUE)
+region_to_pixels <- function(region_map, region_df) {
+  stopifnot(all(c("region_id","value") %in% names(region_df)))
 
-ggplot(seg_df_all, aes(x = y, y = x, fill = factor(cluster))) +
+  idmat <- region_map
+  idmat[idmat == 0L] <- NA_integer_
+
+  v <- region_df$value
+  names(v) <- as.character(region_df$region_id)
+
+  out <- matrix(NA_real_, nrow(idmat), ncol(idmat))
+  ok <- is.finite(idmat)
+  out[ok] <- v[as.character(idmat[ok])]
+  out
+}
+
+
+
+# region map
+seg_cap <- FITSio::readFITS("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/segmentation/starlet_capivara/sagui10.fits")
+region_map <- seg_cap$imDat
+region_map[region_map == 0] <- NA_integer_
+
+# sed table (one row per region, region_id = row number)
+sed <- read.csv("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/sed_fitting/sagui-10_sed_results.csv")
+
+sed2 <- sed %>%
+  dplyr::mutate(region_id = dplyr::row_number())
+
+# --- choose property ---
+reg_mass <- sed2 %>% dplyr::transmute(region_id, value = logzsol)
+
+# --- OPTIONAL smoothing on region graph ---
+use_smooth <- TRUE
+if (use_smooth) {
+  res <- smooth_region_field_laplacian(region_map,
+                                       region_values = reg_mass,
+                                       adjacency = "queen",
+                                       lambda = 100)
+  Z_mass <- res$interpolated_matrix
+} else {
+  Z_mass <- region_to_pixels(region_map, reg_mass)
+}
+
+# --- to ggplot df ---
+df_mass <- mat_to_df(Z_mass, flip_y = FALSE, transpose = FALSE)
+
+# --- plot ---
+ggplot(df_mass, aes(x = x, y = y, fill = value)) +
   geom_raster() +
-#  coord_fixed() +
-  scale_fill_manual(values = palette_van_gogh(max(8, N_global)),
-                    na.value = "black") +
-  facet_wrap(~ dataset, ncol = 3,scales="free") +
-  theme_bw() +
+  coord_fixed() +
+  scale_fill_gradientn(colours = palette_van_gogh(100), na.value = "black",
+                       name = "Mass (Msun)") +
+  theme_void() +
   theme(
-    strip.background = element_rect(fill = "gray80", colour = NA),
-    panel.grid       = element_blank(),
-    panel.background = element_rect(fill = "black", colour = NA),
-    axis.title       = element_blank(),
-    axis.text        = element_blank(),
-    axis.ticks       = element_blank(),
-    legend.position  = "none",
-    strip.text       = element_text(size = 10, face = "bold")
+    panel.background = element_rect(fill = "black", colour = NA)
+  )
+
+
+vals <- df_mass$value
+vals <- vals[is.finite(vals)]
+
+brks <- classInt::classIntervals(vals, n = 20, style = "fisher")$brks
+brks
+
+ggplot(df_mass, aes(x = x, y = y, fill = value)) +
+  geom_raster() +
+  coord_fixed() +
+  scale_fill_gradientn(
+    colours = palette_van_gogh(20),
+    values  = scales::rescale(brks),  # nonlinear mapping
+    na.value = "black",
+    name = "Log Z"
+  ) +
+  theme_void() +
+  theme(legend.position="right",
+    panel.background = element_rect(fill = "black", colour = NA)
   )
 
 
 
 
-
-
-
-
-
-
-
-
-
-sed <- read.csv("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/sed_fitting/sagui-5-6_sed_results.csv")
 
 # SFR(t) for exponential declining SFH
 sfr_exp <- function(t, tau) {
@@ -425,22 +481,33 @@ sed2 <- sed %>%
 # Example: mass per region
 Age <- sed2$t_mw_gyr
 
-p_mass <- plot_property_voronoi_style(
-  cluster_data = seg_cap,
-  values      = Age,
-  value_label = "AGE",
-  palette     = palette_van_gogh(N)
+seg_cap$cluster_map <- seg_cap$imDat
+
+plot_property_voronoi_style(
+  cluster_data  = seg_cap,
+  values      = sed$sfr,
+  value_label = "Log Z",
+  palette = palette_van_gogh(40)
 )
 
-p_mass
+reg_val <- data.frame(region_id = seq(1:40),value=sed$sfr)
+
+res <- smooth_region_field_laplacian(seg_cap$cluster_map, region_values = reg_val,
+                           adjacency="queen", lambda=10)
+Z_interp <- res$interpolated_matrix
+
+image(Z_interp,col=palette_van_gogh(100))
+
+
+
 
 sfr_log10 <- (sed2$sfr_now)
 #sfr_log10[!is.finite(sfr_log10)] <- NA          # just in case
 
 names(sfr_log10) <- as.character(seq_len(nrow(sed2)))
 
-p_sfr <- plot_property_voronoi_style(
-  cluster_data = seg_cap,
+p_sfr <- plot_property_map(
+  cluster_map  = seg_cap,
   values      = sfr_log10,
   palette     = palette_van_gogh(N),
   na_color = "black",
