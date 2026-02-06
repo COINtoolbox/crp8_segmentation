@@ -36,13 +36,29 @@ def sedpy_filter(colname):
 
 def build_obs(flux, flux_errs=None, filters=None, snr=10, **extras):
     """
-    Build a dictionary of observational data for Prospector
+    Build a dictionary of observational data.
     
-    :param flux: list or array of fluxes in Jy
-    :param flux_errs: list or array of flux errors in Jy
-    :param filters: list of sedpy filter names
-    :param snr: S/N to use if flux_errs is None
+    Parameters
+    ----------
+    flux : array_like
+        Observed fluxes in Jy, one per filter.
+    flux_errs : array_like, optional
+        Flux uncertainties in Jy. If None, uncertainties are estimated
+        assuming a constant signal-to-noise ratio given by `snr`.
+    filters : list of str
+        List of sedpy filter names corresponding to the flux measurements.
+    snr : float, optional
+        Signal-to-noise ratio used to estimate flux uncertainties when
+        `flux_errs` is not provided. Default is 10.
+    **extras : dict
+        Additional keyword arguments.
+
+    Returns
+    -------
+    obs : dict
+        Observational dictionary.
     """
+    
     if filters is None:
         raise ValueError("filters must be provided as a list of sedpy filter names")
     
@@ -234,7 +250,7 @@ def sfr_exp(tage, tau, mass):
     Parameters
     ----------
     tage : float
-        Age of the system in Gyr
+        Time since the onset of star formation (Gyr), i.e. the duration over which the star formation history is defined
     tau : float
         SFH timescale in Gyr
     mass : float
@@ -249,5 +265,54 @@ def sfr_exp(tage, tau, mass):
     A = mass / (tau * (1.0 - np.exp(-tage / tau)))  # Msun / Gyr
     sfr_gyr = A * np.exp(-tage / tau)               # Msun / Gyr
     sfr_yr = sfr_gyr / 1e9                          # Msun / yr
+    
     return sfr_yr
+    
+    
+def sfr_avg_exp(tage, tau, mass, dt):
+    """
+    Average SFR over the last dt Gyr for an exponential SFH.
 
+    Parameters
+    ----------
+    tage : float or array
+        Time since the onset of star formation (Gyr), i.e. the duration over which the star formation history is defined
+    tau : float or array
+        SFH timescale in Gyr
+    mass : float or array
+        Total formed stellar mass in Msun
+    dt : float
+        Time window in Gyr (e.g. 0.01 = 10 Myr, 0.1 = 100 Myr)
+
+    Returns
+    -------
+    sfr : float or array
+        Average SFR in Msun/yr
+    """
+    A = mass / (tau * (1.0 - np.exp(-tage / tau)))
+    t1 = np.maximum(0.0, tage - dt)
+    sfr_avg = (A * tau / dt) * (np.exp(-t1 / tau) - np.exp(-tage / tau)) # Msun / Gyr
+    sfr_avg_yr = sfr_avg / 1e9                                           # Msun / yr
+    
+    return sfr_avg_yr
+
+def mass_weighted_age_exp(tage, tau):
+    """
+    Mass-weighted stellar age for an exponential SFH.
+
+    Parameters
+    ----------
+    tage : float or array
+        Time since the onset of star formation (Gyr), i.e. the duration over which the star formation history is defined
+    tau : float or array
+        Exponential SFH timescale in Gyr
+
+    Returns
+    -------
+    t_mw : float or array
+        Mass-weighted stellar age in Gyr
+    """
+    exp_term = np.exp(-tage / tau)
+    t_mw = (tau - (tage + tau) * exp_term) / (1.0 - exp_term)
+    
+    return t_mw

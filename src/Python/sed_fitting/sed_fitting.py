@@ -86,8 +86,15 @@ if __name__ == "__main__":
 
         # add region column (starting at 1, not 0)
         df_results.insert(0, "region", np.arange(1, len(df_results) + 1))
-        df_results["sfr"] = sfr_exp(tage=df_results["tage"].values, tau=df_results["tau"].values, mass=df_results["mass"].values)
+        
+        # add SFR 10 Myr, SFR 100 Myr
+        df_results["sfr_10myr"] = sfr_avg_exp(tage=df_results["tage"].values, tau=df_results["tau"].values, mass=df_results["mass"].values, dt=0.01)
+        df_results["sfr_100myr"] = sfr_avg_exp(tage=df_results["tage"].values, tau=df_results["tau"].values, mass=df_results["mass"].values, dt=0.1)
+       
+        # add mass-weighted stellar age 
+        df_results["age_mass_weighted"] = mass_weighted_age_exp(tage=df_results["tage"].values, tau=df_results["tau"].values)
 
+	# save csv
         out_csv = os.path.join(output_dir, f"{gal_name}_sed_results.csv")
         df_results.to_csv(out_csv, index=False)
 
