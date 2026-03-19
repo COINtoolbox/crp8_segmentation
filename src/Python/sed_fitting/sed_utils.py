@@ -114,7 +114,7 @@ def build_model(object_redshift=None, fixed_metallicity=None, add_duste=False, a
     # Priors
     model_params["dust2"]["prior"] = priors.TopHat(mini=0.0, maxi=5.0)
     model_params["tau"]["prior"] = priors.LogUniform(mini=0.5, maxi=10.0)
-    model_params["mass"]["prior"] = priors.TopHat(mini=10**6.5, maxi=10**13.5)
+    model_params["mass"]["prior"] = priors.TopHat(mini=10**5, maxi=10**13.5)
     model_params["logzsol"]["prior"] = priors.TopHat(mini=-2, maxi=0.3)
 
     # IMF: Chabrier (2003)
