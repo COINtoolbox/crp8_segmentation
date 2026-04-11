@@ -3,7 +3,7 @@ import glob
 import pandas as pd
 import numpy as np
 from multiprocessing import Pool
-from sed_utils import process_sed, sedpy_filter, build_model, build_sps, sfr_exp
+from sed_utils import process_sed, sedpy_filter, build_model, build_sps, sfr_exp, sfr_avg_exp, mass_weighted_age_exp
 
 HOME = os.environ["HOME"]
 
@@ -86,8 +86,22 @@ if __name__ == "__main__":
 
         # add region column (starting at 1, not 0)
         df_results.insert(0, "region", np.arange(1, len(df_results) + 1))
-        df_results["sfr"] = sfr_exp(tage=df_results["tage"].values, tau=df_results["tau"].values, mass=df_results["mass"].values)
+        
+        # add number of pixels per region
+        df_results["n_pix"] = df["n_pix"].values
+        
+        # add SFR 10 Myr, SFR 100 Myr
+        df_results["sfr_10myr"] = sfr_avg_exp(tage=df_results["tage"].values, tau=df_results["tau"].values, mass=df_results["mass"].values, dt=0.01)
+        df_results["sfr_100myr"] = sfr_avg_exp(tage=df_results["tage"].values, tau=df_results["tau"].values, mass=df_results["mass"].values, dt=0.1)
+        
+        # add sSFR
+        df_results["ssfr_10myr"] = df_results["sfr_10myr"] / df_results["mass"]
+	df_results["ssfr_100myr"] = df_results["sfr_100myr"] / df_results["mass"]
+	
+	# add mass-weighted stellar age 
+        df_results["age_mass_weighted"] = mass_weighted_age_exp(tage=df_results["tage"].values, tau=df_results["tau"].values)
 
+	# save csv
         out_csv = os.path.join(output_dir, f"{gal_name}_sed_results.csv")
         df_results.to_csv(out_csv, index=False)
 
