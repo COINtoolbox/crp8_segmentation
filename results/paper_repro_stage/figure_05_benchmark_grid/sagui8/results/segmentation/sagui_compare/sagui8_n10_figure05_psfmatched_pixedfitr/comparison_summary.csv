@@ -1,0 +1,3 @@
+"method","n_regions","valid_pixels","mean_pixels_per_region","median_pixels_per_region","mean_cluster_snr","mean_avg_corr","median_avg_corr","mean_pixel_intravariance","median_pixel_intravariance","target_sn","mask_mode","systematic_factor"
+"sagui",10,4965,496.5,248,63.410728603937,0.96395952004934,0.987071629881036,0.104331390480928,0.0169531469389388,NA,"paperexact_starlet",NA
+"pixedfit_r",14,9200,657.142857142857,24.5,49.9835553782264,0.984760874015443,0.982098876835793,0.0351308395334277,0.0205512660678269,1025.15625,"pixlike_foreground",0.02

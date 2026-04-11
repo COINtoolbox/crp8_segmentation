@@ -1,0 +1,740 @@
+% mnras_template.tex 
+%
+% LaTeX template for creating an MNRAS paper
+%
+% v3.3 released April 2024
+% (version numbers match those of mnras.cls)
+%
+% Copyright (C) Royal Astronomical Society 2015
+% Authors:
+% Keith T. Smith (Royal Astronomical Society)
+
+% Change log
+%
+% v3.3 April 2024
+%   Updated \pubyear to print the current year automatically
+% v3.2 July 2023
+%	Updated guidance on use of amssymb package
+% v3.0 May 2015
+%    Renamed to match the new package name
+%    Version number matches mnras.cls
+%    A few minor tweaks to wording
+% v1.0 September 2013
+%    Beta testing only - never publicly released
+%    First version: a simple (ish) template for creating an MNRAS paper
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Basic setup. Most papers should leave these options alone.
+\documentclass[fleqn,usenatbib]{mnras}
+
+% MNRAS is set in Times font. If you don't have this installed (most LaTeX
+% installations will be fine) or prefer the old Computer Modern fonts, comment
+% out the following line
+\usepackage{newtxtext,newtxmath}
+% Depending on your LaTeX fonts installation, you might get better results with one of these:
+%\usepackage{mathptmx}
+%\usepackage{txfonts}
+
+% Use vector fonts, so it zooms properly in on-screen viewing software
+% Don't change these lines unless you know what you are doing
+\usepackage[T1]{fontenc}
+
+% Allow "Thomas van Noord" and "Simon de Laguarde" and alike to be sorted by "N" and "L" etc. in the bibliography.
+% Write the name in the bibliography as "\VAN{Noord}{Van}{van} Noord, Thomas"
+\DeclareRobustCommand{\VAN}[3]{#2}
+\let\VANthebibliography\thebibliography
+\def\thebibliography{\DeclareRobustCommand{\VAN}[3]{##3}\VANthebibliography}
+
+
+%%%%% AUTHORS - PLACE YOUR OWN PACKAGES HERE %%%%%
+
+% Only include extra packages if you really need them. Avoid using amssymb if newtxmath is enabled, as these packages can cause conflicts. newtxmatch covers the same math symbols while producing a consistent Times New Roman font. Common packages are:
+\usepackage{graphicx}	% Including figure files
+\usepackage{amsmath}	% Advanced maths commands
+\usepackage{xcolor}
+\usepackage{todonotes}
+\RequirePackage[fixed]{fontawesome5}
+% \usepackage{amssymb}
+
+\newcommand{\shenoy}[1]{\textbf{\textcolor{green}{#1}}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%% AUTHORS - PLACE YOUR OWN COMMANDS HERE %%%%%
+
+% Please keep new commands to a minimum, and use \newcommand not \def to avoid
+% overwriting existing commands. Example:
+%\newcommand{\pcm}{\,cm$^{-2}$}	% per cm-squared
+\definecolor{coinblue}{HTML}{244EA3}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=coinblue,
+    citecolor=coinblue,
+    urlcolor=coinblue
+}
+\input{scripts/starlet_stack_tikz.tex}
+\input{scripts/sed_mosaic.tex}
+\input{scripts/seg_mosaic.tex}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%% TITLE PAGE %%%%%%%%%%%%%%%%%%%
+
+% Title of the paper, and the short title which is used in the headers.
+% Keep the title short and informative.
+\title[SAGUI]{\includegraphics[scale=0.025]{sagui.jpg}
+SAGUI: Segmentation Analysis of hyperspectral astronomical images — Application to the JADES in GOODS-South}
+
+% The list of authors, and the short list which is used in the headers.
+% If you need two or more lines of authors, add an extra line using \newauthor
+\author[de Souza et al.]{(\textcolor{red}{Order not final})
+Rafael S. de Souza,$^{1,2,3}$\thanks{E-mail: rd23aag@herts.ac.uk}
+\thanks{drsouza@ad.unc.edu}
+Andressa Wille,$^{2}$
+Shravya Shenoy,$^{1}$
+Alberto Krone-Martins,$^{4}$
+\newauthor
+Aarya A. Patil,$^{5}$
+Celine Boehm,$^{6}$
+Thallis Pessi,$^{7}$
+Ana L. Chies-Santos,$^{2}$
+Reinaldo R. Rosa,$^{8}$
+Kristen C. Dage,$^{9}$
+\newauthor
+Emille E. O. Ishida,$^{10}$
+Lilianne Nakazono,$^{11}$
+Rupesh Durgesh,$^{12}$
+Phelipe Darc,$^{13}$
+for the COIN collaboration
+\\
+% List of institutions
+$^{1}$Centre for Astrophysics Research, University of Hertfordshire, Hatfield AL10 9AB, UK\\
+$^{2}$Instituto de Física, Universidade Federal do Rio Grande do Sul, Porto Alegre, RS 90040-060, Brazil\\
+$^{3}$Department of Physics \& Astronomy, University of North Carolina at Chapel Hill, NC 27599-3255, USA\\
+$^{4}$Donald Bren School of Information and Computer Sciences, University of California, Irvine, CA 92697, USA\\
+$^{5}$Max-Planck-Institut für Astronomie, Königstuhl 17, D-69117 Heidelberg, Germany\\
+$^{6}$School of Physics, The University of Sydney and ARC Centre of Excellence for Dark Matter Particle Physics, NSW 2006, Australia\\
+$^{7}$European Southern Observatory, Alonso de Córdova 3107, Vitacura, Casilla 19001, Santiago, Chile\\
+$^{8}$Lab for Computing and Applied Mathematics, COPDT-INPE-MCTI, São José dos Campos, SP 12245-010, Brazil\\
+$^{9}$ International Centre for Radio Astronomy Research—Curtin University, GPO Box U1987, Perth, WA 6845, Australia\\
+$^{10}$Université Clermont Auvergne, CNRS/IN2P3, LPC, F-63000 Clermont-Ferrand, France\\
+$^{11}$Observatório Nacional / MCTI, Rua General José Cristino 77, Rio de Janeiro, RJ, 20921-400, Brazil\\
+$^{12}$Independent researcher, Germany\\
+$^{13}$International Centre for Radio Astronomy Research—Curtin University, GPO Box U1987, Perth, WA 6845, Australia
+}
+
+% These dates will be filled out by the publisher
+\date{Accepted XXX. Received YYY; in original form ZZZ}
+
+% Prints the current year, for the copyright statements etc. To achieve a fixed year, replace the expression with a number. 
+\pubyear{\the\year{}}
+
+% Don't change these lines
+\begin{document}
+\label{firstpage}
+\pagerange{\pageref{firstpage}--\pageref{lastpage}}
+\maketitle
+
+% Abstract of the paper
+\begin{abstract}
+
+Galaxies exhibit a wide variety of internal structures, whose identification and characterization require efficient segmentation techniques. We present a suite of methods for the analysis of multi-band imaging data, with extensions to integral-field spectroscopy, developed under the umbrella of {\sc sagui}: a modular framework for spatially resolved galaxy analysis. Building on the spectro-spatial paradigm introduced by {\sc capivara} for integral-field spectroscopic data, {\sc sagui} generalizes this approach to imaging datasets, enabling a coherent, pixel-level treatment of spatial and spectral information across multiple bands.
+The method follows a two-stage strategy. In the first stage, a starlet-based decomposition is employed to identify and mask spatial structures across multiple scales while suppressing noise. In the second stage, a spectral-similarity analysis partitions the image into coherent pixel groups that preserve spectral consistency. We demonstrate our approach across a diverse range of galaxy morphologies, showcasing its ability to characterize complex spatial structures, including clumps, bars, and interacting systems. As a case study, we apply the method to ten morphologically diverse galaxies from the James Webb Space Telescope Advanced Deep Extragalactic Survey (JADES) in the GOODS–South field.
+{\sc sagui} is released under an  MIT license and is available at this repository \href{https://rafaelsdesouza.github.io/sagui/}{\faGithub}.
+
+\end{abstract}
+
+% Select between one and six entries from the list of approved keywords.
+% Don't make up new ones.
+\begin{keywords}
+Data analysis-methods, galaxies: structure – galaxies: evolution
+\end{keywords}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%% BODY OF PAPER %%%%%%%%%%%%%%%%%%
+
+\section{Introduction}
+The 2020s have witnessed a milestone in imaging and photometric studies in optical and near-infrared astronomy. The wealth of exquisite, high-quality data observed by the James Webb Space Telescope has been nothing short of remarkable. Moreover, this year marks the start of the long-awaited Legacy Survey of Space and Time (LSST), which, besides providing the foundation for statistical studies of galaxies and their substructures, including bars, bulges, halos, disks, pseudo-components \citep{Binney2008,Simard2011}, will also prove invaluable for low-surface brightness science \citep{Englert25}.
+These facilities deliver multi-filter imaging across broad optical and near-infrared wavelength ranges. Such data can be viewed as low-dimensional hyperspectral cubes, where each pixel encodes a spectral energy distribution (SED).
+
+Historically, studies of galaxy evolution relied on integrated-light measurements or central single-fiber spectra from surveys such as the Sloan Digital Sky Survey \citep{York2000} and GAMA \citep[Galaxy and Mass Assembly,][]{Driver2009}. While these data established canonical scaling relations, they lacked spatial resolution, and inferred stellar masses and star-formation rates (SFRs) can depend sensitively on the adopted aperture. In particular, at lower redshifts, the effect of a fixed aperture size becomes more significant, particularly for late-type spiral galaxies where substantial star formation occurs in the outer discs, thus leading to underestimated SFRs. At the same time, contamination from nuclear emission may lead to an overestimation of SFRs \citep{2016richards_SAMI}. Integrated measurements may underestimate stellar masses due to the dominance of luminous young populations (“outshining” effects; \citealt{Sorba2015}), reinforcing the need for spatially resolved analyses. 
+
+Integral-field spectroscopy (IFS) transformed the field by enabling resolved maps of stellar populations, ionised gas, and kinematics. Surveys including SAURON \citep{deZeeuw02}, ATLAS\textsuperscript{3D} \citep{Cappellari2011}, CALIFA \citep{Sanchez2012}, SAMI \citep{SAMIDR3_2021}, MaNGA \citep{Bundy2015}, KMOS3D \citep{Wisnioski2019}, and SINS/zC-SINF \citep{Forster2018} provided spatially resolved insights into galaxy assembly and dynamical evolution. 
+
+In parallel, spatially resolved SED modelling \citep{Abdurro2018} demonstrated that multi-band photometry can recover stellar ages, dust attenuation, and structural gradients when spectroscopy is unavailable. Simulation-based studies have further demonstrated that galaxy properties obtained by summing pixel-by-pixel measurements from resolved SED fitting are broadly consistent with those derived from integrated photometry (e.g. \citealt{2018Smith}, with pixel size covering $\gtrsim$ 1 kpc of the galaxy).
+
+Despite these advances, methodological limitations remain, especially with observational studies. Pixel-level SED fitting is highly sensitive to noise, whereas binning strategies such as Voronoi tessellation improve signal-to-noise ratio at the  cost of spectral coherence, potentially fragmenting genuine structures. The challenge is therefore not merely statistical efficiency but astrophysical awareness: segmentation must ideally be a trade-off between  physically meaningful components and morphological structure. Computer vision offers a relevant analogy. Semantic segmentation in hyperspectral imaging has proven effective in remote sensing and robotics \citep{Medellin2023}. Astronomical datasets share similar characteristics — high dimensionality, heterogeneous noise, and strong spatial correlations — but introduce additional constraints, including extreme dynamic range, dust attenuation, and the coexistence of emission-line and continuum features. These properties require domain-aware segmentation strategies.
+
+
+The need for such approaches becomes evident when considering the physical complexity of galaxies. Stellar systems comprise multiple structural components—disks, spiral arms, bulges, bars, and nuclear clusters—embedded within a multiphase interstellar medium.
+Each exhibits distinct age, metallicity, and kinematic signatures shaped by internal processes and external perturbations throughout  cosmic time. Spiral arms and bars not only define galactic morphology, but also regulate angular momentum transport and secular evolution \citep[e.g.][]{sellwood2014}. Interactions ranging from minor fly-bys to major mergers redistribute baryons, producing tidal tails, bridges, and shells while triggering enhanced star formation \citep[e.g.][]{luo2014, ferreira2025}.
+Compact starburst regions \citep[e.g.][]{calabro2019, elmegreen2021, he2022} and disturbed morphologies therefore act as tracers of dynamical evolution. Sub-galactic analyses are essential for connecting spatially localized processes to global transformation \citep{Helmi2020}. Early HST observations revealed clumpy kiloparsec-scale structures \citep[e.g.][]{cowie1995, elmegreen2005, elmegreen2009}, and the increased sensitivity of JWST now enables detailed studies of star formation on even smaller physical scales \citep[e.g.][]{claeyssens2023, delavega2025}. Spatially and spectrally coherent segmentation is therefore not a cosmetic refinement, but a prerequisite for linking localized physical processes to galaxy-wide evolution.
+
+Building on our IFU-based spectral segmentation framework \texttt{capivara} \citep{capivara2025}, we introduce \texttt{sagui}, an adaptation tailored to multi-band photometric imaging. While preserving the core principle of clustering spatial pixels in SED space, \texttt{sagui} incorporates modifications required by the photometric regime, including multiscale starlet-based denoising \citep{starck_murtagh_2006} and computational refinements to distance-matrix operations appropriate for higher-resolution imaging data. Spatially resolved SED-fitting framework such as \texttt{piXedfit} \citep{piXedfit2021} and related photometric tools have demonstrated the scientific power of spatially resolved stellar population modelling. In practice, these analyses frequently rely on Voronoi binning or similar schemes to stabilize fits in low signal-to-noise regimes. Although such strategies improve statistical robustness, they may compromise spectral homogeneity or fragment physically coherent structures.
+
+Our aim is not to replace these tools, but to complement them by addressing the upstream segmentation problem: identifying spatially coherent and spectrally homogeneous regions, i.e., regions with similar SED shapes, prior to population synthesis modelling. In this sense, \texttt{sagui} complements source-detection and deblending tools by focusing on SED-coherent region segmentation within resolved galaxy light.
+
+
+The method is guided by two principles: (1) defining a physically motivated spatial envelope; and (2) clustering pixels in SED space.
+Together, these components yield regions that preserve both spatial continuity and spectral consistency, enabling robust inference of stellar populations, dust content, and star-formation activity without relying on signal-to-noise–driven binning schemes that may blur spectrally distinct populations. 
+
+This paper is structured as follows: Section~\ref{sec:data} describes the dataset and its motivation; Section~\ref{sec:method} presents the methodology; Section~\ref{sec:results} discusses the main results and presents spatially resolved maps of physical properties of our sample after segmentation; Section~\ref{sec:lsb} explores an additional case study with copula transform combined to the segmentation to investigate low-surface-brightness structures. Section~\ref{sec:conclusions} summarises our conclusions.
+
+
+
+
+
+\section{Data and sample selection}
+\label{sec:data}
+Throughout this paper, we analyse broadband imaging data to demonstrate the performance of our segmentation framework.
+We select ten galaxies in the GOODS–South field observed with the \textit{James Webb Space Telescope} as part of the Advanced Deep Extragalactic Survey \citep[JADES;][]{rieke2023, eisenstein2023a, eisenstein2023b}. The sample was assembled via visual inspection to ensure the presence of clear morphological substructures—such as star-forming clumps, bars, spiral arms, and merger signatures—that provide a meaningful testbed for segmentation. The systems span intermediate redshifts ($0.25 \lesssim z \lesssim 1.1$), balancing spatial resolution with morphological diversity.
+
+\autoref{fig:jades} shows NIRCam colour composites constructed using F277W (R), F182M (G), and F115W (B) filters. Background levels were estimated and subtracted using low-percentile sky values, and intensities were scaled using a common non-linear (asinh) stretch derived from the luminance distribution of each system. This approach preserves faint tidal features and clumpy structure while preventing saturation of bright cores. A mild colour normalisation was applied to balance channel intensities. Sagui-1, Sagui-2, and Sagui-3 lie close in projection but differ in redshift, allowing us to assess algorithmic behaviour in crowded fields. Sagui-4 exhibits a strongly disturbed, post-merger morphology with compact clumps distributed along an extended tidal feature, possibly associated with recent star formation. Sagui-5 and Sagui-6 are at the same redshift but differ structurally: the former displays a disk-like morphology with visible spiral structure,  while the latter appears elongated,  with its stellar emission stretched along a preferred axis, suggestive of ongoing interaction.  Sagui-7 presents a disturbed system with two bright central components embedded in a diffuse envelope, consistent with near-coalescence. Sagui-8 and Sagui-9 are relatively undisturbed face-on spirals rich in star-forming clumps, and Sagui-10 hosts a prominent bar.
+
+
+
+\begin{figure*}
+  \centering
+  \begin{tikzpicture}
+    \node[anchor=south west,inner sep=0] (img) at (0,0)
+      {\includegraphics[width=\linewidth]{figures/composite/mosaic.png}};
+    \begin{scope}[x={(img.south east)},y={(img.north west)}]
+      % coordinates are relative (0–1)
+    \node[text=white,font=\bfseries\small,align=center] at (0.15,0.825) {sagui-1\\ \emph{z} = 0.77};
+    \node[text=white,font=\bfseries\small,align=center] at (0.1,0.525) {sagui-2\\ \emph{z} = 1.04};
+    \node[text=white,font=\bfseries\small,align=center] at (0.295,0.63) {sagui-3\\ \emph{z} = 0.99};
+    \node[text=white,font=\bfseries\small,align=center] at (0.45,0.55) {sagui-4\\\emph{z} = 0.36};
+    \node[text=white,font=\bfseries\small,align=center] at (0.6,0.55) {sagui-5\\\emph{z} = 0.36};
+    \node[text=white,font=\bfseries\small,align=center] at (0.775,0.75) {sagui-6\\\emph{z} = 0.36};
+    \node[text=white,font=\bfseries\small,align=center] at (0.175,0.3) {sagui-7\\\emph{z} = 1.09};
+    \node[text=white,font=\bfseries\small,align=center] at (0.42,0.375) {sagui-8\\\emph{z} = 0.62};
+    \node[text=white,font=\bfseries\small,align=center] at (0.675,0.375) {sagui-9\\\emph{z} = 0.66};
+    \node[text=white,font=\bfseries\small,align=center] at (0.85,0.125) {sagui-10\\\emph{z} = 0.42};
+    \end{scope}
+  \end{tikzpicture}
+  \caption{JWST/NIRCam color composites of the galaxies analyzed in this study. Their identifiers and redshifts are indicated in each panel. The images were constructed using the filters F277W (red), F182M (green) and F115W (blue).}
+  \label{fig:jades}
+\end{figure*}
+
+
+We use JWST/NIRCam imaging in fourteen broad and medium bands (F090W, F115W, F150W, F182M, F200W, F210M, F277W, F335M, F356W, F410M, F430M, F444W, F460M, and F480M). For each galaxy, the images were aligned and cropped to the same field of view, and stacked along the filter dimension to construct a multi-band image cube. Because the NIRCam point spread function (PSF) varies significantly with wavelength, direct comparison of pixel-level fluxes across bands would introduce artificial colour gradients and bias SED-based clustering. We therefore homogenised the imaging to a common angular resolution prior to segmentation. Empirical PSFs for the JADES GOODS–South field, measured by \citet{delavega2025}, were used to construct convolution kernels that transform each band to the broader filter resolution F444W. 
+
+Spectroscopic redshifts were obtained primarily from the MUSE Hubble Ultra Deep Field Survey \citep{2017A&A...608A...1B, 2023A&A...670A...4B}, with the exception of Sagui-5, for which a VIMOS spectrum was used \citep{2009A&A...494..443P}. Redshifts were determined by fitting Gaussian profiles to prominent nebular emission lines (e.g.\ [O\,\textsc{ii}] $\lambda3727$, H$\beta$, [O\,\textsc{iii}] $\lambda5007$, H$\alpha$). Each line was fitted independently, and centroid offsets relative to rest-frame wavelengths yielded individual redshift estimates. When multiple lines were available, a weighted mean was computed using inverse-variance weights based on centroid uncertainties. The final redshift values, reported to four significant digits, reflect the typical precision ($\sigma_z \sim 10^{-4}$) afforded by MUSE spectral resolution. Galaxy coordinates and spectroscopic redshifts are listed in \autoref{tab:galaxies}.
+
+\begin{table}
+\centering
+\caption{Coordinates and spectroscopic redshifts for the ten galaxies in our sample (see \autoref{fig:jades}).}
+\begin{tabular}{lccc}
+\hline
+Galaxy ID & RA (J2000) & DEC (J2000) & $z$ \\
+\hline
+Sagui-1 & 03:32:36.50 & $-27$:46:29.5 & 0.7649 \\
+Sagui-2 & 03:32:36.40 & $-27$:46:31.6 & 1.0385 \\
+Sagui-3 & 03:32:36.60 & $-27$:46:31.2 & 0.9965 \\
+Sagui-4 & 03:32:34.20 & $-27$:45:54.4 & 0.3664 \\
+Sagui-5 & 03:32:36.38 & $-27$:51:18.0 & 0.3583 \\
+Sagui-6 & 03:32:35.95 & $-27$:51:18.6 & 0.3583 \\
+Sagui-7 & 03:32:35.59 & $-27$:46:26.8 & 1.0878 \\
+Sagui-8 & 03:32:40.87 & $-27$:46:16.8 & 0.6222 \\
+Sagui-9 & 03:32:13.70 & $-27$:49:34.5 & 0.6651 \\
+Sagui-10 & 03:32:39.27 & $-27$:45:33.0 & 0.4148 \\   
+\hline
+\end{tabular}
+\label{tab:galaxies}
+\end{table}
+
+
+
+\section{Methodology}
+\label{sec:method}
+The segmentation strategy implemented in \texttt{sagui} builds upon the spectral-clustering philosophy originally introduced in \texttt{capivara}, but adapts it to multi-band imaging data. While \texttt{capivara} was designed for IFU cubes with high-resolution spectra per spaxel, \texttt{sagui} operates on broadband and medium-band photometric images, where each pixel carries a SED. In addition, \texttt{sagui} incorporates an explicit morphology-preserving spatial masking stage based on undecimated wavelet analysis, which is not part of the original \texttt{capivara} implementation. The method therefore consists of the following steps conceptually distinct steps: i) morphology-aware spatial masking, based on a starlet decomposition of a white-light image; spectral segmentation, via hierarchical clustering of pixel SEDs. Additionally, we experiment with a copula-based transform to improve sensitivity to diffuse, low–surface-brightness (LSB) outskirts; this extension is described in \autoref{sec:lsb}.
+
+
+
+
+\subsection{Morphology-Preserving Spatial Masking}
+
+
+Determining the spatial extent of a galaxy is intrinsically challenging: galaxies lack sharp physical edges, and their surface-brightness profiles decay smoothly into the background. A variety of approaches has been proposed to address this problem, ranging from noise-based detection thresholds \citep[e.g.][]{Akhlaghi2015} to U-Net–based deep learning models \citep[e.g.][]{Iglesias2024}. Our goal is not to evaluate these methods, but to construct a robust and reproducible foreground mask that ensures consistent spatial delimitation for subsequent spectral segmentation. To this end, we first construct a robust white-light image from the spectral cube via slice-by-slice background subtraction and weighted spectral collapse, designed to suppress noise and sky-subtraction residuals while preserving low--surface-brightness emission. The resulting image is analysed using the isotropic undecimated wavelet transform, commonly referred to as the \emph{starlet transform} \citep[e.g.][]{starck_murtagh_2006,starck_fadili_murtagh_2007}. We implemented a customised version of the transform within \texttt{sagui}; the corresponding functionality will also be incorporated into a future release of \texttt{capivara}.
+
+
+The starlet transform provides a multiscale decomposition that is both shift-invariant and defined directly on the original pixel grid. As a result, structures detected at different spatial scales remain perfectly co-registered, avoiding artefacts associated with downsampling or pixel shifts. This property is particularly advantageous for astronomical imaging, where galaxies exhibit structure across a broad range of spatial scales and where no explicit geometric prior (e.g., symmetry or connectivity) should be imposed.
+%
+Let $I_0(x,y)$ denote an input image.  
+The starlet transform iteratively constructs a sequence of progressively smoothed images $\{c_j\}_{j=1}^J$ by convolution with a dilated
+B$_3$-spline scaling filter,
+\begin{equation}
+h[k] = \tfrac{1}{16}(1,4,6,4,1),
+\end{equation}
+where dilation at scale $j$ is achieved by inserting $2^{j-1}-1$ zeros
+between filter coefficients.
+At each scale, the wavelet coefficients are defined by differencing successive smooth components,
+\begin{equation}
+w_j = c_{j-1} - c_j .
+\end{equation}
+The decomposition therefore yields a hierarchy of detail maps $\{w_j\}$ capturing progressively larger spatial structures, together with a final coarse component $c_J$. Owing to the undecimated construction, all components retain the original spatial dimensions, and the transform satisfies the exact reconstruction identity
+\begin{equation}
+I_0 = \sum_{j=1}^J w_j + c_J .
+\end{equation}
+For multiband imaging data, we construct a two-dimensional white-light image that summarises the spatial distribution of the signal across the available bands. The starlet transform is then applied to this image, producing multiscale detail coefficients $\{w_j(x,y)\}_{j=1}^{J}$ and a smooth residual component $c_J(x,y)$, all defined on the native spatial grid. \autoref{fig:starlet_sagui123_10} illustrates the resulting multiscale decomposition in practice.
+
+
+\begin{figure*}
+\centering
+\resizebox{\linewidth}{!}{\StarletStack{sagui1_2_3}{sagui1_2_3}{5}}
+\resizebox{\linewidth}{!}{\StarletStack{sagui4}{sagui4}{5}}
+\resizebox{\linewidth}{!}{\StarletStack{sagui10}{sagui10}{5}}
+\caption{Starlet decomposition for representative galaxies (Sagui-1–3, Sagui-4, and Sagui-10). In each case, the original image is exactly recovered by summing the detail coefficients across all five scales and the coarse component. The finest scale ($j=1$) is dominated by pixel-scale fluctuations, while intermediate scales trace coherent galactic structure. Larger scales isolate progressively smoother and more extended components.}
+\label{fig:starlet_sagui123_10}
+\end{figure*}
+
+To isolate the galaxy for subsequent spectral segmentation, we reconstruct a spatial envelope by combining the denoised wavelet coefficients at intermediate and large spatial scales, explicitly excluding the finest scale ($j=1$), which is typically dominated by pixel-scale noise. The spatial envelope is defined as
+\begin{equation}
+R(x,y) = \sum_{j=2}^{J} \widetilde{w}_j(x,y),
+\end{equation}
+where $\widetilde{w}_j(x,y)$ denotes the thresholded-starlet coefficients at scale $j$. 
+The final foreground mask is obtained by converting $R(x,y)$ into a binary map, retaining pixels with positive reconstructed intensity and assigning all others to the background. Since the starlet coefficients represent local contrast relative to a smoothed background, they are approximately mean-zero by construction, hence positive values trace coherent signal above the local background, whereas negative values mostly correspond to noise fluctuations.
+
+
+\subsection{SED-based segmentation}
+
+
+In contrast to geometric tessellations such as Voronoi binning \citep{Voronoi1908,Franz91,Cappellari2003}, which partition the spatial plane according to proximity, our approach partitions the feature space of pixel SEDs and maps the resulting clusters back onto the image grid. In this sense, the method performs a tessellation in SED space rather than in physical space, following the general paradigm of feature-space partitioning in statistical pattern recognition \citep{bishop2006pattern}.
+
+To construct this tessellation according to SED similarity, we adopt a method inspired by the \textsc{capivara} segmentation framework, originally developed for integral-field spectroscopy and here adapted to multi-band photometric data. In this formulation, each pixel $x_{ij}$ is represented by a spectral energy distribution composed of the $B=14$ JWST/NIRCam bands used in this work, with components $f_{ijb}$ corresponding to the background-subtracted flux measured in band $b$.
+
+
+Pixel similarity is quantified through distances in the space of normalized SEDs. 
+Let $\widehat{\mathbf f}_{ij} = (\widehat f_{ij1},\ldots,\widehat f_{ijB})$ denote the normalized SED vector of pixel $x_{ij}$. 
+The distance between two pixels $x_{ij}$ and $x_{kl}$ is defined using the $\ell_p$ norm,
+\begin{equation}
+d(x_{ij},x_{kl}) =
+\left\lVert
+\widehat{\mathbf f}_{ij} - \widehat{\mathbf f}_{kl}
+\right\rVert_p
+=
+\left(
+\sum_{b=1}^{B}
+\left|
+\widehat f_{ijb} - \widehat f_{klb}
+\right|^p
+\right)^{1/p},
+\label{eq:lp_phot}
+\end{equation}
+where $b=1,\ldots,B$ indexes the photometric bands.
+Throughout this work we adopt $p=2$, corresponding to the Euclidean distance, and use hierarchical agglomerative clustering with Ward linkage to group pixels with similar SEDs.
+
+
+
+From the resulting pairwise distance matrix, we perform hierarchical agglomerative clustering. The algorithm is initialized by assigning each pixel to its own cluster and iteratively merging the two clusters with the smallest inter-cluster distance. The procedure continues until a predefined number of clusters is reached, producing a dendrogram that encodes the hierarchical structure of SED similarity across the image. The final segmentation is obtained by cutting this dendrogram at the desired level, yielding regions that are homogeneous in their photometric SEDs while preserving structure across spatial scales.
+
+
+
+
+\subsection{Spatially Resolved SED fitting}
+
+We estimate the physical properties of each segmented region using the \textsc{Prospector} SED fitting code \citep[][]{2021Johnson_Prospector}. The code employs the Flexible Stellar Population Synthesis (FSPS) model \citep{2009Conroy}, implemented through  \textsc{Python-fsps} \citep{2014PyFSPS}.  This method generates SED models allowing for a flexible treatment of both stellar populations and dust physics, while explicitly accounting for parameter uncertainties. 
+Continuum and line emission for the stellar populations are calculated using the nebular emission models implemented within FSPS (see \citealt{2017Byler_fspsmodels} for details) using the photoionization code \textsc{cloudy} \citep{1998Ferland_Cloudy}. 
+%The free parameters of the model are the stellar mass and stellar metallicity. 
+Stellar mass is assigned a uniform prior over the range $10^{4.5}$–$10^{13.5}\,M_{\odot}$, spanning the stellar mass scales expected in our analysis, from individual star-forming clumps to bigger structures.
+Stellar metallicity is allowed to vary uniformly between $10^{-2}\,Z_{\odot}$ and $10^{0.3}\,Z_{\odot}$. We adopt a \citet{2003Chabrier_IMF} initial mass function and the \citet{2000Calzetti_DustAttenuation} attenuation law. The redshifts are fixed to their spectroscopic values as described in Sec.~\ref{sec:data}. Stellar population synthesis is modeled using the \citet{Bruzual2003} templates. 
+
+For each region, we construct an integrated SED by summing the flux from all pixels contained within the segmentation mask in each photometric band. The total flux in each band is computed as the sum of the pixel fluxes, and uncertainties are propagated by combining the individual pixel errors in quadrature. In cases where correlated noise or background subtraction uncertainties are significant, these contributions are included in the error budget to ensure reliable photometric uncertainties. The resulting multi-band photometry therefore represents the integrated light of the stellar population and dust content associated with each segment.\\
+\\
+These segment-level SEDs are then fitted with Prospector using identical model assumptions and priors for all regions, thereby ensuring a uniform analysis. We adopt deliberately broad priors to encompass the expected spatial variations in galaxy properties; however, a more detailed, spatially resolved treatment will be explored in future work to better capture effects such as AGN contamination and other localised processes. Spectroscopic redshift estimates from Table \ref{tab:galaxies} are used, ensuring that the derived physical parameters are not biased by photometric redshift uncertainties. Fixing the redshift also removes one degree of freedom from the model, which improves the accuracy of derived physical parameters and tightens their posterior distributions. We adopt an exponentially declining parametric star-formation history (SFH) ($\tau$ model) with
+
+\begin{equation}
+\mathrm{SFR}(t) \propto e^{-t/\tau},
+\end{equation}
+where $\tau$ represents the characteristic timescale of the exponentially declining star formation history. As demonstrated by \citet{2019Carnall}, the inferred galaxy properties like SFRs can vary by at least 0.3 dex depending on the assumed SFH. However, we do not expect our results to be significantly affected by this choice for two reasons. First, discrepancies between results obtained under different SFH assumptions are driven primarily by the shape of the true star-formation history, rather than by the specific parametric form adopted. Second, since this work focuses on relative gradients of parameter variations across segments rather than on their absolute values, any systematic offsets are expected to largely cancel out. Nevertheless, a systematic investigation of the impact of alternative SFH priors would be useful to explore in a future work, especially since studies have shown that adopting non-parametric star formation histories can improve the accuracy of inferred galaxy properties by mitigating the outshining of older stellar populations by recent star formation \citep{2025Euclid}. The posterior distributions returned by Prospector provide estimates of physical parameters such as stellar mass, star formation rate, stellar age, metallicity, and dust attenuation. We compute the average star formation rate over recent timescales of $\Delta t=$10 Myr and 100 Myr ($\mathrm{SFR_{10}}$ and $\mathrm{SFR_{100}}$)
+\begin{equation}
+\mathrm{SFR}_{\Delta t}
+=\frac{1}{\Delta t} \int_{t_1}^{t_{\mathrm{age}}} \mathrm{SFR}(t)\, dt,
+\end{equation}
+where $t_{\mathrm{age}}$ is the age of the stellar population. We also use mass-weighted ages $\langle t \rangle_{M}$, computed by 
+\begin{equation}
+\langle t \rangle_{M} = \frac{\int_{0}^{t_{\mathrm{age}}} t\,\mathrm{SFR}(t)\,dt} {\int_{0}^{t_{\mathrm{age}}} \mathrm{SFR}(t)\,dt}.
+\end{equation}
+%
+Uncertainties and parameter degeneracies are retained through the posterior sampling, allowing for robust error estimation on a segment-by-segment basis.\\
+\\
+The derived physical properties are subsequently mapped back to the spatial domain by assigning each segment’s median posterior values to all pixels within the corresponding segmentation mask. This procedure produces two-dimensional maps of stellar mass surface density, star formation rate surface density, dust attenuation and other inferred properties, while preserving the original morphological segmentation. 
+In this manner, the segment-based SED fitting results are translated into spatially resolved physical property maps that reflect the underlying structure of the galaxy.
+
+
+
+\section{Application to JADES galaxies}
+\label{sec:results}
+
+We demonstrate the workflow using our representative sample of ten galaxies spanning a range of morphologies. After running \texttt{sagui} on the images, we obtain segmentation matrices that assign each pixel to a specific SED-defined group. Figure~\ref{fig:mosaic_segmentations} illustrates the resulting SED-based segmentation. For this demonstration, we partition each galaxy into 40 segments, which provides a practical compromise between structural characterization and signal-to-noise ratio. We emphasize that the primary aim of this paper is to illustrate the methodology. A detailed astrophysical interpretation of the segmented regions will be addressed in future work; the parameter choices adopted here are therefore intended to showcase the capabilities of the method rather than to provide a comprehensive analysis of the galaxies themselves.
+
+
+For each segmented region identified by \texttt{sagui}, we infer physical parameters using \texttt{Prospector} SED fitting and project the resulting estimates back onto the spatial grid. This yields two-dimensional maps of stellar population properties,  enabling a visual inspection of spatial variations in stellar mass, star-formation activity, metallicity, and dust attenuation. Because each segment corresponds to a coherent region in SED space, these maps provide a physically motivated partition of the galaxy, linking morphological structures to their underlying stellar populations.
+
+We emphasize that \texttt{sagui} is not designed to replace generic source-detection or deblending pipelines. Methods such as \textsc{SExtractor} \citep{Bertin1996}, \textsc{NoiseChisel} \citep{Akhlaghi2015}, and \textsc{scarlet} \citep{Melchior2018} are optimized for detecting, separating, and measuring sources in imaging data. The role of \texttt{sagui} is different: it operates after the construction of a spatially meaningful foreground mask and aims to partition galaxy light into regions that remain coherent in SED space, thereby providing a physically motivated input for resolved stellar-population analysis. In this sense, \texttt{sagui} is best understood as complementary to source-detection methods rather than as a competing alternative. The exact appearance of the segmentation depends on analysis choices such as the PSF homogenisation across bands, the starlet-mask parameters used to define the spatial envelope, and the adopted number of components $N_{\mathrm{comp}}$. These parameters control the effective granularity of the partition and should therefore be adjusted to the scientific objective of the application.
+
+\begin{figure*}
+\centering
+%\resizebox{1\linewidth}{!}{
+\SegMosaicLabeled{figures/segmentation}
+%}
+\caption{Spatial distribution of the 40 segments detected by \texttt{sagui}. Different colours denote distinct segments.}
+\label{fig:mosaic_segmentations}
+\end{figure*}
+
+
+
+\subsection{Sagui~1, 2, and~3}
+
+This first system consists of three galaxies, Sagui~1, Sagui~2, and
+Sagui~3, located in close projection within the JADES field but spanning distinct redshifts ($z=0.77$, $z=1.04$, and $z=0.99$, respectively). Despite their apparent proximity on the sky, these objects are not physically associated, providing a representative example of a crowded high-redshift field where multiple systems with overlapping isophotes and complex morphologies coexist. All three galaxies exhibit irregular and asymmetric light distributions, with a mixture of compact bright regions and extended low-surface-brightness features, making this system particularly well suited for evaluating the ability of the segmentation to disentangle projected structures while preserving morphological diversity.
+Figure~\ref{fig:mosaic_segmentations} presents the spatial distribution of the 40 components identified by the \texttt{sagui} segmentation. %scheme in the JADES field containing Sagui~1, 2, and~3. 
+A visual inspection reveals noteworthy features.
+
+In Sagui~1 ($z=0.77$), the algorithm isolates a compact, high-SNR central component, surrounded by multiple asymmetric and elongated regions that trace extended stellar structures and diffuse emission. These features are suggestive of a disturbed morphology, potentially linked to interaction or  ongoing assembly, and are recovered without imposing any prior assumptions about galaxy symmetry or connectivity.
+
+Sagui~2 ($z=1.04$) is segmented into a small number of relatively compact components, dominated by a bright core. The segmentation naturally separates these regions based on local surface-brightness coherence, capturing both the central concentration and fainter surrounding structures that would otherwise be blended in object-based approaches.
+
+For Sagui~3 ($z=0.99$), the method identifies an elongated main component
+and several secondary regions aligned with its major axis, consistent with a disk-like or tidally stretched morphology. Despite the projected
+proximity of Sagui~1, ~2, and~3 on the sky, their components are not
+artificially merged. Instead, the segmentation responds to differences in morphology, scale, and SNR, effectively disentangling overlapping systems at distinct redshifts.
+
+
+
+
+
+\subsection{Sagui~4}
+%sagui-4
+For Sagui~4 ($z=0.36$), the algorithm highlights two structures: a bright core, displaced from the galaxy center as a consequence of its disturbed configuration, and several star-forming clumps, highlighted by different colors in the segments of the second panel of Figure \ref{fig:mosaic_segmentations}. These clumps may be part of star-forming regions originally associated with the merged galaxies or they may have formed during the merger, after the fragmentation and compression of the gas. 
+%This scenario is consistent with the fact that merger-driven starbursts are significantly more clumpy than normal galaxies \citep{calabro2019}.
+
+Figure \ref{fig:starlet_sagui4} shows spatially resolved stellar population maps derived from SED fitting for this galaxy. The panels show a central galactic region with lower star formation activity (see the bluer area in the SFR panel) and an older stellar population, while the outer regions of the galaxy show younger stellar populations (blue area in the $\langle t \rangle_{M}$ panel) and more active star formation (the brownish area in the SFR panel). This is consistent with the fact that the outer and asymmetric regions of this galaxy still contain gas and the merger has triggered star formation. Additionally, some regions in the disk present slightly different values in metallicity and SFR, as well as in dust attenuation, compared to their surroundings. These variations spatially coincide with the locations of star-forming clumps.
+
+% and the outer structures? outside of the disk?
+
+\begin{figure}
+\centering
+\resizebox{\linewidth}{!}{\SaguiSEDMosaicFour{sagui4}{figures/sed_maps}{_smooth}
+}
+\caption{Spatially resolved stellar population maps derived from SED fitting for the Sagui~4 system. Each panel displays a two-dimensional map of a physical property inferred from the SED-fitting, including stellar metallicity $\log_{10}(Z/Z_\odot)$, star-formation-rate surface density $\Sigma_{\mathrm{SFR}}\,[M_\odot\,\mathrm{yr}^{-1}\,\mathrm{kpc}^{-2}]$, mass-weighted stellar age $\langle t\rangle_{\mathrm{M}}$, and dust attenuation $A_V$.}
+\label{fig:starlet_sagui4}
+\end{figure}
+
+
+\subsection{Sagui~5-6}
+
+Sagui~5 (face-on) and Sagui~6 (almost edge-on) are a pair of galaxies at the same redshift ($z=0.36$) with asymmetries in their disks resulting from tidal perturbations in the early stages of interaction. The spiral and asymmetric arms of Sagui~5 are prominent, and in Sagui~6, the segmentation clearly shows its elongated disk and larger central component. An interesting feature visible in the RGB image (see Figure \ref{fig:jades}) is a prominent clump located in the spiral arms, which is also naturally recovered by our algorithm in Figure \ref{fig:mosaic_segmentations}. This is also true for other galaxies in the sample
+
+In Figure \ref{fig:starlet_sagui56}, the SFR and $\langle t \rangle_{M}$ panels show more intense star formation and younger populations in the spiral arms, particularly in the region disturbed by the ongoing interaction. There is a clear spatial gradient of these properties extending from the center to the outer regions of the galaxies. The outermost regions near the interaction also exhibit lower metallicity (stellar metallicity panel). It is also possible to observe a difference between the two galaxies in terms of dust attenuation: Sagui~5 exhibits uniform, low attenuation throughout the galaxy. Sagui~6, on the other hand, has a very dusty nucleus, unlike its disk.
+
+
+ \begin{figure}
+\centering
+\resizebox{\linewidth}{!}{\SaguiSEDMosaicFour{sagui5_6}{figures/sed_maps}{_smooth}
+}
+\caption{Spatially resolved stellar population maps derived from SED fitting for the Sagui~5-6 system. Each panel displays a two-dimensional map of a physical property inferred from the SED-fitting, including stellar metallicity $\log_{10}(Z/Z_\odot)$, star-formation rate (SFR), mass-weighted stellar age $\langle t\rangle_{\mathrm{M}}$, and dust attenuation $A_V$.}
+\label{fig:starlet_sagui56}
+\end{figure}
+
+\subsection{Sagui~7}
+
+
+For Sagui-7 ($z=1.09$), a system of two merging galaxies that still preserve much of their individual structures, the method distinguishes the center of each galaxy and their spiral arms. 
+
+Figure \ref{fig:mosaic_segmentations} shows that the colliding galaxies have some differences: one of them has more dust (the northern galaxy), while the other is bluer and appears to have more star formation in clumps (the southern galaxy). This is also evident in Figure \ref{fig:starlet_sagui7} in the dust attenuation panel, where the central region of the northern galaxy has higher attenuation values compared to the central region of the southern galaxy. 
+
+Besides that, the panels  also reveal other expected properties: older cores with lower star formation rates compared to the spiral arms.
+
+%the northern galaxy appear to have a ring of increased star formation near its core — is a result of the collision?
+
+\begin{figure}
+\centering
+\resizebox{\linewidth}{!}{\SaguiSEDMosaicFour{sagui7}{figures/sed_maps}{_smooth}
+}
+\caption{Spatially resolved stellar population maps derived from SED fitting for the Sagui~7 system. Each panel displays a two-dimensional map of a physical property inferred from the SED-fitting, including stellar metallicity $\log_{10}(Z/Z_\odot)$, star-formation rate (SFR), mass-weighted stellar age $\langle t\rangle_{\mathrm{M}}$, and dust attenuation $A_V$.}
+\label{fig:starlet_sagui7}
+\end{figure}
+
+
+
+\subsection{Sagui~8}
+%sagui-8
+Sagui-8 ($z=0.62$) is an undisturbed galaxy with an organized spiral pattern. The segmentation is efficient in separating their well defined and symmetric arms, highlighting the most prominent clumps, regions that also have different values in their properties compared to their immediate surroundings, as can be seen in the panels of Figure \ref{fig:starlet_sagui8}, especially in the distribution of dust attenuation.
+
+
+\begin{figure}
+\centering
+\resizebox{\linewidth}{!}{\SaguiSEDMosaicFour{sagui8}{figures/sed_maps}{_smooth}
+}
+\caption{Spatially resolved stellar population maps derived from SED fitting for the Sagui~8 system. Each panel displays a two-dimensional map of a physical property inferred from the SED-fitting, including stellar metallicity $\log_{10}(Z/Z_\odot)$, star-formation rate (SFR), mass-weighted stellar age $\langle t\rangle_{\mathrm{M}}$, and dust attenuation $A_V$.}
+\label{fig:starlet_sagui8}
+\end{figure}
+
+\subsection{Sagui~9}
+
+The segmentation of the galaxy Sagui-9 ($z=0.66$) highlights its spiral pattern, as well as a particularly elongated structure in the edge of the disk. This structure is larger than the compact knots that appear in other regions of the disk (see Figures \ref{fig:jades} and \ref{fig:mosaic_segmentations}). This region also stands out in the stellar population maps shown in Figure \ref{fig:starlet_sagui9} because does not exhibit enhanced star formation compared to the surrounding arm, in contrast with the other clumps that show locally SFR. Previous studies have shown that extended off-centre structures, particularly those larger than typical star-forming clumps, may correspond to accreting satellite galaxies rather than in-situ clumps formed within the disk \citep[e.g.][]{zanella2019}. The location, morphology, and star formation behaviour of this structure may indicate that this is the case here.
+ 
+
+\begin{figure}
+\centering
+\resizebox{\linewidth}{!}{\SaguiSEDMosaicFour{sagui9}{figures/sed_maps}{_smooth}
+}
+\caption{Spatially resolved stellar population maps derived from SED fitting for the Sagui~9 system. Each panel displays a two-dimensional map of a physical property inferred from the SED-fitting, including stellar metallicity $\log_{10}(Z/Z_\odot)$, star-formation rate (SFR), mass-weighted stellar age $\langle t\rangle_{\mathrm{M}}$, and dust attenuation $A_V$.}
+\label{fig:starlet_sagui9}
+\end{figure}
+
+
+
+\subsection{Sagui~10}
+
+Sagui~10 ($z=0.42$) is a strongly barred spiral galaxy. The algorithm can separate the arms and the bar, and also distinguish the spherical shape of the central structure. This central component may correspond either to a bulge or to a nuclear disk formed by gas inflows driven by the bar \citep{kormendy2004}, although kinematic information would be required to confirm. 
+
+Figure \ref{fig:starlet_sagui10} shows that the bar hosts an older stellar population and lower star formation activity compared to the spiral arms. However, the bar is not a uniform structure. The central spheroid exhibits clear spatial variations in metallicity, while in the mass-weighted stellar age map this region appears younger than the surrounding bar. Disentangling this apparent discrepancy, likely also driven by the age–metallicity degeneracy, will require spatially resolved spectroscopic observations.
+
+
+ \begin{figure}
+\centering
+\resizebox{\linewidth}{!}{\SaguiSEDMosaicFour{sagui10}{figures/sed_maps}{_smooth}
+}
+\caption{Spatially resolved stellar population maps derived from SED fitting for the Sagui~10 system. Each panel displays a two-dimensional map of a physical property inferred from the SED-fitting, including stellar metallicity $\log_{10}(Z/Z_\odot)$, star-formation rate (SFR), mass-weighted stellar age $\langle t\rangle_{\mathrm{M}}$, and dust attenuation $A_V$.}
+\label{fig:starlet_sagui10}
+\end{figure}
+
+
+
+
+
+
+\section{The case of low-surface brightness}
+\label{sec:lsb}
+
+\subsection{Sagui~11}
+
+Sagui~11 (RA: 03:32:33.04, Dec: -27:50:30.36) provides a challenging and illustrative example for
+testing the limits of segmentation methods in the presence of low--surface--brightness (LSB) emission. The system consists of two galaxies at
+$z \simeq 1.1$ connected by a diffuse bridge whose surface brightness lies only
+marginally above the background level
+(Fig.~\ref{fig:sagui12}). Such tidal features are common in interacting systems
+at intermediate and high redshift, yet they are notoriously difficult to
+recover reliably, as they are easily suppressed by noise filtering or absorbed
+into the background during preprocessing.
+
+In this case, the LSB bridge is morphologically extended but spectrally
+coherent, sharing a similar SED shape across multiple JWST bands. This
+combination makes the system particularly suitable for testing approaches that
+go beyond simple surface-brightness thresholding. Methods that rely primarily
+on flux contrast or single-band detection tend to fragment or erase such
+features, whereas a successful segmentation must simultaneously preserve faint
+morphology and inter-band consistency.
+
+Figure~\ref{fig:sagui12} shows the composite image of the system, where the
+bridge is visually discernible only after aggressive stretching and remains
+close to the noise level in individual bands. This regime highlights the need
+for a detection strategy that is insensitive to absolute flux scaling, yet
+capable of amplifying correlated low-level emission across bands before the
+application of the starlet-based mask.
+
+
+\begin{figure}
+     \centering
+    \includegraphics[width=\linewidth]{figures/composite/lsb_composite.png}  
+    \caption{Interacting galaxies at $z=1.1$. These galaxies have structures that are examples of low-surface-brightness features: tidal tails and a bridge between them.}
+    \label{fig:sagui12}
+\end{figure}
+
+
+
+\subsection{Copula transform}
+
+To disentangle galaxy light from noisy backgrounds in multi-band imaging, it is essential to understand not only the spatial correlation of flux within each band but also the correlation across different bands. Moreover, this correlation should be characterised in a scale-independent way, since low-surface-brightness galaxies are just as important to segment as their high-surface-brightness counterparts. 
+
+While galaxies can be segmented using flux density as a metric for spatial correlation, this approach discards valuable information that a copula-based framework can preserve, specifically, scale invariance through the removal of marginal distributions. By modelling the dependence structure through a copula, we can analyse the spatial and inter-band correlations in a manner that is independent of absolute brightness or size, allowing us to better identify galaxies across a wide dynamic range.
+
+A copula is a fundamental yet powerful statistical approach for characterising the dependence structure between random variables, independent of their marginal distributions. In our context, each image band represents a dimension, with pixel fluxes serving as the random variables whose inter-band dependence we seek to model.
+
+To build a single detection image from a multi-band cube that is robust to
+band-dependent scalings and nonlinearities, we construct a copula-based
+``energy'' map. Let $\{I_k\}_{k=1}^K$ denote the $K$ registered bands with
+intensities $I_k:\Omega\!\to\!\mathbb{R}$ on the image domain $\Omega$.
+For each band, we form an empirical cumulative distribution function
+$\hat F_k$ from all pixels in that band, and map intensities to
+\emph{normal scores} via the probability integral transform:
+\begin{equation}
+U_k(i,j) \;=\; \hat F_k\!\big(I_k(i,j)\big), 
+\qquad
+Z_k(i,j) \;=\; \Phi^{-1}\!\big(U_k(i,j)\big),
+\end{equation}
+where $\Phi^{-1}$ is the standard normal quantile function.  This rank-based step
+removes per-band monotone transformations, making the construction
+insensitive to relative calibration and dynamic-range differences.
+
+For emission-dominated targets (galaxies, spiral arms), positive
+departures are most informative. We therefore define a one-sided set of
+scores,
+\begin{equation}
+Z_k^{+}(i,j) \;=\; \max\!\big(Z_k(i,j),\,0\big),
+\end{equation}
+and aggregate them into a scalar energy via a sum of squares:
+\begin{equation}
+P(i,j) \;=\; \sum_{k=1}^{K} \big(Z_k^{+}(i,j)\big)^{2}.
+\label{eq:copula-energy}
+\end{equation}
+If the $Z_k$ were independent $\mathcal{N}(0,1)$, then
+$\sum_k Z_k^2$ would be $\chi^2_K$; the use of $Z_k^{+}$ concentrates the
+statistic on the upper tail, improving sensitivity to faint, positive features while remaining robust to per-band scaling.
+
+
+Figure~\ref{fig:starlet_sagui11} shows the starlet decomposition for this pair of galaxies after applying copula, while Figure~\ref{fig:segments_sagui12} shows the segmentation using \texttt{sagui}. The two galaxies are clearly visible; unlike the previous examples, they do not have many internal structures, as they are both elliptical galaxies, but they do have an external bridge connecting them due to their interaction. Besides that, the northern galaxy has a very prominent tidal tail, and the southern galaxy appears more hexagonal in shape due to the PSF shape at wider filters. 
+
+In Figure~\ref{fig:map_sagui11}, the bridge also stands out in terms of the properties shown: on the SFR map, naturally, the star formation rate is low in this structure compared to galaxies, and on the mass-weighted age map, it is also evident that it is a younger structure than galaxies.
+
+ \begin{figure*}
+\centering
+\resizebox{0.95\linewidth}{!}{\StarletStack{sagui12_cop}{sagui12_cop}{7}}
+\caption{Starlet decomposition for representative galaxies (Sagui-11). In each case, the original image is exactly recovered by summing the detail coefficients across all five scales and the coarse component. The finest scale ($j=1$) is dominated by pixel-scale fluctuations, while intermediate scales trace coherent galactic structure. Larger scales isolate progressively smoother and more extended components.}
+\label{fig:starlet_sagui11}
+\end{figure*}
+
+
+\begin{figure}
+     \centering
+    \includegraphics[width=0.45\linewidth]{figures/segmentation/sagui12.png} 
+       \includegraphics[width=0.45\linewidth]{figures/segmentation/sagui12_copula.png}  
+    \caption{Spatial distribution of the 40 segments detected by \texttt{sagui}. Different colours denote distinct segments. 
+    Left panel: segmentation performed directly on the data, as in Fig.~\ref{fig:mosaic_segmentations}. 
+    Right panel: segmentation performed on the copula-transformed data.}
+    \label{fig:segments_sagui12}
+\end{figure}
+
+
+
+ \begin{figure}
+\centering
+\resizebox{\linewidth}{!}{\SaguiSEDMosaicFour{sagui11}{figures/sed_maps}{_smooth}
+}
+\caption{Spatially resolved stellar population maps derived from SED fitting for the Sagui~11 system. Each panel displays a two-dimensional map of a physical property inferred from the SED fitting, including stellar metallicity $\log_{10}(Z/Z_\odot)$, star-formation rate (SFR), mass-weighted stellar age $\langle t\rangle_{\mathrm{M}}$, and dust attenuation $A_V$.}
+\label{fig:map_sagui11}
+\end{figure}
+
+
+
+
+
+\section{Conclusions}
+\label{sec:conclusions}
+
+
+We present a suite of methods for the analysis of multi-band imaging data, with extensions to integral-field spectroscopy, developed under the umbrella of \textsc{sagui}: a modular framework for spatially resolved galaxy analysis. Building on the spectro–spatial paradigm introduced by \textsc{capivara} for integral-field spectroscopic data, \textsc{sagui} extends this philosophy to multi-band imaging, enabling a coherent pixel-level treatment of spatial and spectral information across multiple filters. The method follows a two-stage strategy. In the first stage, a starlet-based decomposition is used to identify and mask spatial structures across multiple scales while suppressing background noise. In the second stage, a spectral-similarity analysis partitions the image into coherent pixel groups that preserve spectral consistency across bands.
+
+We demonstrate the performance of the method across a diverse range of galaxy morphologies, illustrating its ability to recover complex spatial structures such as clumps, bars, and interacting systems. As a case study, we apply the framework to ten morphologically diverse galaxies from the \textit{James Webb Space Telescope} Advanced Deep Extragalactic Survey (JADES) in the GOODS--South field. The resulting segmentation maps trace physically coherent regions across the galaxies, enabling spatially resolved analysis of their spectral energy distributions while preserving the underlying astrophysical structure.
+
+\section*{Acknowledgements}
+Some of the data products presented herein were retrieved from the Dawn JWST Archive (DJA). DJA is an initiative of the Cosmic Dawn Center (DAWN), which is funded by the Danish National Research Foundation under grant DNRF140.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \section*{Data Availability}
+
+ 
+% Git, zenodo and space. 
+
+
+
+
+%%%%%%%%%%%%%%%%%%%% REFERENCES %%%%%%%%%%%%%%%%%%
+
+% The best way to enter references is to use BibTeX:
+
+\bibliographystyle{mnras}
+\bibliography{references} % if your bibtex file is called example.bib
+
+
+% Alternatively you could enter them by hand, like this:
+% This method is tedious and prone to error if you have lots of references
+%\begin{thebibliography}{99}
+%\bibitem[\protect\citeauthoryear{Author}{2012}]{Author2012}
+%Author A.~N., 2013, Journal of Improbable Astronomy, 1, 1
+%\bibitem[\protect\citeauthoryear{Others}{2013}]{Others2013}
+%Others S., 2012, Journal of Interesting Stuff, 17, 198
+%\end{thebibliography}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%% APPENDICES %%%%%%%%%%%%%%%%%%%%%
+
+\appendix
+
+\section{1D Toy Example of the Starlet Reconstruction}
+ 
+ 
+ 
+ \begin{figure}
+     \centering
+     \includegraphics[width=\linewidth]{figures/starlet_kernel.pdf}
+    \caption{
+À trous filter kernels $h_j$ for a toy model, shown for successive scales 
+$j = 0, \ldots, J-1$. The widening support with increasing $j$ illustrates the 
+standard dilation--by--holes construction applied to the base filter $h_0$. 
+The horizontal index is arbitrary and is used only to visually separate the kernels.
+}
+ \label{fig:starlet_kernel}
+ \end{figure}
+
+We decompose the input function using the isotropic starlet transform, which
+iteratively convolves the signal with the dilated B--spline scaling kernels
+\(h_j\). This procedure yields a sequence of smooth components \(a_j\) and
+corresponding detail coefficients \(w_j = a_j - a_{j-1}\). As the effective
+support of \(h_j\) increases with \(j\), the smooth terms \(a_j\) provide
+progressively coarser approximations of the underlying function, while the
+detail components \(w_j\) isolate the structures introduced at each scale.  
+Because the starlet transform is redundant and exactly invertible, the original
+function may be reconstructed---up to numerical precision---by summing the
+coarsest smooth component and all detail coefficients,
+\[
+f(x) = a_J(x) + \sum_{j=1}^{J} w_j(x).
+\]
+Figure~\ref{fig:starlet_components} illustrates this multiscale decomposition
+for our toy model: large-scale behaviour accumulates in the coarse
+approximation \(a_J\), whereas fine-scale oscillatory variations are confined
+to the wavelet coefficients \(w_j\).
+
+
+ 
+\begin{figure*}
+     \centering
+     \includegraphics[width=\linewidth]{figures/aw_starlet.pdf}
+ \caption{
+Starlet (à trous) decomposition of a one–dimensional signal  into its smooth components \(a_j\) (left column) and detail coefficients \(w_j = a_{j} - a_{j-1}\) (right column). 
+The sequence \(\{a_j\}\) provides progressively smoother approximations to the original function ($a_0$), while \(\{w_j\}\) captures the fluctuations added at each spatial scale. 
+The sum of all detail components together with the coarsest smooth component reconstructs the original function to numerical precision.}
+ \label{fig:starlet_components}
+ \end{figure*}
+ 
+
+
+\section{Starlet Decomposition}
+
+ \begin{figure*}
+\centering
+\resizebox{0.9\linewidth}{!}{\StarletStack{sagui5_6}{sagui5_6}{5}}
+\resizebox{0.9\linewidth}{!}{\StarletStack{sagui7}{sagui7}{5}}
+\resizebox{0.9\linewidth}{!}{\StarletStack{sagui8}{sagui8}{5}}
+\resizebox{0.9\linewidth}{!}{\StarletStack{sagui9}{sagui9}{5}}
+\caption{Starlet decomposition for representative galaxies (Sagui-5–9). In each case, the original image is exactly recovered by summing the detail coefficients across all five scales and the coarse component. The finest scale ($j=1$) is dominated by pixel-scale fluctuations, while intermediate scales trace coherent galactic structure. Larger scales isolate progressively smoother and more extended components.}
+\label{fig:starlet_sagui59}
+\end{figure*}
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% Don't change these lines
+\bsp	% typesetting comment
+\label{lastpage}
+\end{document}
+
+% End of mnras_template.tex

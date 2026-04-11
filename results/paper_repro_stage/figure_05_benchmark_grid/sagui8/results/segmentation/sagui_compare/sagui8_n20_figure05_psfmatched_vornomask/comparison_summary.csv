@@ -1,0 +1,3 @@
+"method","n_regions","valid_pixels","mean_pixels_per_region","median_pixels_per_region","mean_cluster_snr","mean_avg_corr","median_avg_corr","mean_pixel_intravariance","median_pixel_intravariance","target_sn","voronoi_mask_mode"
+"sagui",20,4965,248.25,61,42.8833098630046,0.977820690948751,0.991703588872192,0.102222923565925,0.0157921213249774,NA,"shared"
+"voronoi",20,17156,857.8,368.5,60.0797670363965,0.927366624355778,0.985724023657712,0.175106296603593,0.0330858587499161,54.2506577957838,"none"

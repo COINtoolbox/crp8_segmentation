@@ -156,45 +156,6 @@ plot_sed_with_filters <- function(
 ## Region photometry based on SED labels (from hclust)
 ## ------------------------------------------------------------
 
-SED <- RegionPhotometry(
-  X,
-  seg_cap$cluster_map,
-  error_fallback = "poisson"
-)
-
-num_cols  <- as.character(0:9)        # adjust to nbands if needed
-err_cols  <- paste0(num_cols, "_err")
-neff_cols <- paste0(num_cols, "_n_eff")
-
-# Rename only the numeric bands 0..9 here
-flux_wide_named <- SED$flux_wide %>%
-  rename_with(
-    ~ nircam_filters[match(.x, num_cols)],
-    .cols = all_of(num_cols)
-  )
-
-flux_wide_named_jy <- SED$flux_wide %>%
-  # 1) flux [nJy] -> Jy
-  mutate(across(all_of(num_cols), ~ .x * 1e-8)) %>%
-  # 2) errors [nJy] -> Jy
-  mutate(across(all_of(err_cols), ~ .x * 1e-8)) %>%
-  # 3) rename band columns
-  rename_with(
-    ~ nircam_filters[match(.x, num_cols)],
-    .cols = all_of(num_cols)
-  ) %>%
-  # 4) rename error columns: 0_err -> F090W_err
-  rename_with(
-    ~ paste0(nircam_filters, "_err")[match(.x, err_cols)],
-    .cols = all_of(err_cols)
-  ) %>%
-  # 5) rename n_eff columns: 0_n_eff -> F090W_n_eff
-  rename_with(
-    ~ paste0(nircam_filters, "_n_eff")[match(.x, neff_cols)],
-    .cols = all_of(neff_cols)
-  )
-
-readr::write_csv(flux_wide_named_jy, "SED_flux_wide_Jy_reg8.csv")
 
 
 

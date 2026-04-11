@@ -8,25 +8,17 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 
-palette_van_gogh <- function(n = 40) {
-  bands <- list(
-    c("#80B7FF", "#547FFF", "#405CFF", "#405CFF", "#263C8B"), # blues
-    c("#2E6F6B", "#4C8C86"),             # teals
-    c("#FFFAA3", "#FFDE38", "#F2B705"),            # yellows
-    c("#D4A017", "#BFA524", "#8C6D1F")  # ochre/browns
+palette_van_gogh_div <- function(n = 256) {
+  stops <- c(
+    "#0A1026",  # near-black indigo
+    "#182A6B",  # deep ultramarine
+    "#2F5F9A",  # starry blue
+    "#4FA7A6",  # calm cyan
+    "#D8E1D3",  # luminous haze
+    "#F1C76A",  # warm starlight
+    "#A96A2A"   # deep amber
   )
-
-  # Build enough colors from each band
-  k <- length(bands)
-  per <- ceiling(n / k)
-  cols <- unlist(lapply(bands, function(b)
-    grDevices::colorRampPalette(b, space="Lab")(per)
-  ))
-
-  # Interleave bands: 1st of each band, 2nd of each band, ...
-  mat <- matrix(cols, nrow = k, byrow = TRUE)
-  out <- as.vector(t(mat))
-  out[seq_len(n)]
+  grDevices::colorRampPalette(stops, space = "Lab")(n)
 }
 
 
@@ -66,26 +58,20 @@ get_sagui_tag <- function(path) {
 
 make_sagui_paths <- function(tag, base_dir) {
   list(
-    pdf = file.path(
-      base_dir, "results/figures/starlet",
-      paste0("starlet_2d_", tag, ".pdf")
-    ),
-    png = file.path(
-      base_dir, "results/figures/sagui_seg",
-      paste0(tag, ".png")
-    ),
-    fits = file.path(
-      base_dir, "results/segmentation/starlet_capivara",
-      paste0(tag, ".fits")
-    ),
-    csv = file.path(
-      base_dir, "results/flux_per_region",
-      paste0("SED_flux_wide_", tag, ".csv")
-    )
+    pdf = file.path(base_dir, "results/figures/starlet", paste0("starlet_2d_", tag, ".pdf")),
+    starlet_png_dir = file.path(base_dir, "results/figures/starlet_png", tag),
+    
+    png = file.path(base_dir, "results/figures/sagui_seg", paste0(tag, ".png")),
+    fits = file.path(base_dir, "results/segmentation/starlet_capivara", paste0(tag, ".fits")),
+    csv  = file.path(base_dir, "results/flux_per_region", paste0("SED_flux_wide_", tag, ".csv"))
   )
 }
 
-fits_dir <- file.path(base_dir, "data")
+
+
+
+
+fits_dir <- file.path(base_dir, "data/raw")
 fits_files <- list.files(
   fits_dir,
   pattern = "\\.fits$",
@@ -142,6 +128,22 @@ auto_J <- function(img) {
 J <- 5
 dec <- guara::starlet_mask(collapsed, J = J)
 
+export_starlet_panels_png(
+  collapsed = collapsed,
+  dec = dec,
+  J = J,
+  out_dir = paths$starlet_png_dir,
+  tag = tag,
+  prefix = "starlet_2d",
+  px = 1800,
+  res = 300,
+  denoise_k = 1,
+  mode = "soft",
+  keep_include_coarse = FALSE,
+  na_transparent = TRUE
+)
+
+
 # Reconstruction: example with scales 2–6, no coarse, soft denoise
 rec_all <- starlet_reconstruct(
   dec,
@@ -191,7 +193,7 @@ p <- ggplot(df_all, aes(x = y, y = x, fill = value_norm)) +
   geom_raster() +
   coord_fixed() +
   scale_fill_gradientn(
-    colours  = palette_van_gogh(256),
+    colours = palette_van_gogh_div(256),
     na.value = "black",
     limits   = c(0, 1)
   ) +
@@ -237,10 +239,10 @@ FITSio::writeFITSim(
 #pdf("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/figures/sagui_seg/sagui_seg5_6.pdf",height = 3.5,width = 6)
 p <- plot_cluster_voronoi_style(
   seg_cap,
-  palette = palette_van_gogh(N),
+  palette = palette_van_gogh_div(N),
   border_color = "black",
   border_linewidth = 1,
-  background_color = "#2F2F2F"
+  background_color = "transparent"
 )
 ragg::agg_png(paths$png, width = 2000, height = 2000, res = 300)
 print(p)
@@ -297,6 +299,9 @@ flux_ordered_jy <- SED$flux_wide %>%
 readr::write_csv(flux_ordered_jy,paths$csv)
 
 }
+
+
+
 
 
 
@@ -362,195 +367,6 @@ region_to_pixels <- function(region_map, region_df) {
   out[ok] <- v[as.character(idmat[ok])]
   out
 }
-
-
-
-# region map
-seg_cap <- FITSio::readFITS("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/segmentation/starlet_capivara/sagui10.fits")
-region_map <- seg_cap$imDat
-region_map[region_map == 0] <- NA_integer_
-
-# sed table (one row per region, region_id = row number)
-sed <- read.csv("/Users/rd23aag/Documents/GitHub/crp8_segmentation/results/sed_fitting/sagui-10_sed_results.csv")
-
-sed2 <- sed %>%
-  dplyr::mutate(region_id = dplyr::row_number())
-
-# --- choose property ---
-reg_mass <- sed2 %>% dplyr::transmute(region_id, value = logzsol)
-
-# --- OPTIONAL smoothing on region graph ---
-use_smooth <- TRUE
-if (use_smooth) {
-  res <- smooth_region_field_laplacian(region_map,
-                                       region_values = reg_mass,
-                                       adjacency = "queen",
-                                       lambda = 100)
-  Z_mass <- res$interpolated_matrix
-} else {
-  Z_mass <- region_to_pixels(region_map, reg_mass)
-}
-
-# --- to ggplot df ---
-df_mass <- mat_to_df(Z_mass, flip_y = FALSE, transpose = FALSE)
-
-# --- plot ---
-ggplot(df_mass, aes(x = x, y = y, fill = value)) +
-  geom_raster() +
-  coord_fixed() +
-  scale_fill_gradientn(colours = palette_van_gogh(100), na.value = "black",
-                       name = "Mass (Msun)") +
-  theme_void() +
-  theme(
-    panel.background = element_rect(fill = "black", colour = NA)
-  )
-
-
-vals <- df_mass$value
-vals <- vals[is.finite(vals)]
-
-brks <- classInt::classIntervals(vals, n = 20, style = "fisher")$brks
-brks
-
-ggplot(df_mass, aes(x = x, y = y, fill = value)) +
-  geom_raster() +
-  coord_fixed() +
-  scale_fill_gradientn(
-    colours = palette_van_gogh(20),
-    values  = scales::rescale(brks),  # nonlinear mapping
-    na.value = "black",
-    name = "Log Z"
-  ) +
-  theme_void() +
-  theme(legend.position="right",
-    panel.background = element_rect(fill = "black", colour = NA)
-  )
-
-
-
-
-
-# SFR(t) for exponential declining SFH
-sfr_exp <- function(t, tau) {
-  exp(-t / tau)
-}
-mw_age_exp <- function(tage, tau, n_grid = 1000) {
-  # time grid from 0 (start of SF) to tage (now)
-  t <- seq(0, tage, length.out = n_grid)
-  dt <- t[2] - t[1]
-
-  sfr <- sfr_exp(t, tau)
-
-  # star *formation* time = t
-  # stellar age now = tage - t
-  num <- sum((tage - t) * sfr) * dt       # ∫ (tage - t) SFR(t) dt
-  den <- sum(sfr) * dt                    # ∫ SFR(t) dt
-
-  num / den  # returns in same units as tage (Gyr)
-}
-
-current_sfr <- function(mass, tage, tau) {
-  # tau and tage in Gyr
-  # mass in Msun (living mass or total mass formed)
-
-  # Normalization constant
-  A <- mass / (tau * (1 - exp(-tage / tau)))
-
-  # SFR now:
-  sfr_now_gyr = A * exp(-tage / tau)  # Msun / Gyr
-
-  # convert to Msun / yr
-  sfr_now_yr = sfr_now_gyr / 1e9
-
-  return(sfr_now_yr)
-}
-
-
-
-
-sed2 <- sed %>%
-  mutate(
-    t_mw_gyr = purrr::map2_dbl(tage, tau, mw_age_exp),
-    sfr_now = current_sfr(mass, tage, tau)
-  )
-
-# columns: mass, logzsol, dust2, tage, tau
-# row i == region i
-
-
-# Example: mass per region
-Age <- sed2$t_mw_gyr
-
-seg_cap$cluster_map <- seg_cap$imDat
-
-plot_property_voronoi_style(
-  cluster_data  = seg_cap,
-  values      = sed$sfr,
-  value_label = "Log Z",
-  palette = palette_van_gogh(40)
-)
-
-reg_val <- data.frame(region_id = seq(1:40),value=sed$sfr)
-
-res <- smooth_region_field_laplacian(seg_cap$cluster_map, region_values = reg_val,
-                           adjacency="queen", lambda=10)
-Z_interp <- res$interpolated_matrix
-
-image(Z_interp,col=palette_van_gogh(100))
-
-
-
-
-sfr_log10 <- (sed2$sfr_now)
-#sfr_log10[!is.finite(sfr_log10)] <- NA          # just in case
-
-names(sfr_log10) <- as.character(seq_len(nrow(sed2)))
-
-p_sfr <- plot_property_map(
-  cluster_map  = seg_cap,
-  values      = sfr_log10,
-  palette     = palette_van_gogh(N),
-  na_color = "black",
-  value_label = expression("SFR [" * M["\u2609"] * "/yr]")
-)
-
-p_sfr
-
-writeFITSim(seg_cap$cluster_map,"sagui.fits")
-
-
-
-
-# regiões (como você já constrói)
-obj <- build_regions_and_points(seg_cap, Age)
-sf_regions <- obj$regions
-
-# grafo
-W <- region_adjacency(sf_regions)
-
-# suavização espacial (controle aqui!)
-Age_smooth <- spatial_smooth_graph(
-  values = sf_regions$Value,
-  W      = W,
-  lambda = 0.25   # ↑ mais suave, ↓ mais local
-)
-
-sf_regions$Age_smooth <- Age_smooth
-
-ggplot(sf_regions) +
-  geom_sf(aes(fill = Age_smooth), color = NA) +
-  geom_sf(data = obj$boundary, color = "white", linewidth = 0.5) +
-  scale_fill_gradientn(colours = palette_van_gogh(N), na.value = "black") +
-  theme_void() +
-  theme(
-    plot.background  = element_rect(fill = "black", color = NA),
-    panel.background = element_rect(fill = "black", color = NA)
-  )
-
-
-
-
-
 
 
 

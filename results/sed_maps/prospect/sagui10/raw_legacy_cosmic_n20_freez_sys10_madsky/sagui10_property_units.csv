@@ -1,0 +1,8 @@
+property,scale,units
+logM,log10(M/Msun),dex
+logZ,log10(Z/Zsun),dex
+Av,Av,mag
+age_mw,mass-weighted age,Gyr
+sfr,SFR,Msun/yr
+ssfr,sSFR,yr^-1
+sigma_sfr,Sigma_SFR,Msun/yr/kpc^2
